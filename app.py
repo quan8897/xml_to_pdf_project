@@ -12,34 +12,52 @@ st.markdown("""
 *Dành riêng cho Mẫn Nhi mập ❤️*
 """)
 
-col1, col2 = st.columns([1, 1])
+tab1, tab2 = st.tabs(["📤 Tải file XML", "📝 Dán đoạn mã XML"])
+xml_data = None
+show_results = False
 
-# ... (giữ nguyên phần col1, col2 cũ)
-with col1:
+with tab1:
     st.subheader("1. Tải lên file XML")
     uploaded_file = st.file_uploader("Chọn file XML thuế (Vd: Tờ khai thuế GTGT, TNCN...)", type=['xml'])
-
-with col2:
-    st.subheader("2. Kết quả bản PDF")
     if uploaded_file is not None:
-        st.success(f"Đã tải file thành công: {uploaded_file.name}")
         xml_data = uploaded_file.read()
-        
-        if st.button("🚀 Bắt đầu Chuyển đổi PDF"):
-            with st.spinner('Máy chủ đang phân tích dữ liệu và tạo PDF...'):
-                try:
-                    pdf_buffer = generate_tax_pdf(xml_data, title="HỒ SƠ THUẾ CHI TIẾT")
-                    st.balloons()
-                    
-                    st.download_button(
-                        label="📥 Tải xuống kết quả bản PDF",
-                        data=pdf_buffer,
-                        file_name=f"{uploaded_file.name.replace('.xml', '')}_Report.pdf",
-                        mime="application/pdf",
-                        use_container_width=True
-                    )
-                except Exception as e:
-                    st.error(f"⚠️ Có lỗi xảy ra trong quá trình xử lý: {e}")
+        show_results = True
+
+with tab2:
+    st.subheader("1. Dán nội dung XML")
+    pasted_xml = st.text_area("Dán toàn bộ mã XML vào đây:", height=300, placeholder="<xml>...</xml>")
+    if pasted_xml:
+        xml_data = pasted_xml.encode('utf-8')
+        show_results = True
+
+st.divider()
+st.subheader("2. Kết quả bản PDF")
+
+pdf_filename = "Tax_Report.pdf"
+if uploaded_file:
+    pdf_filename = f"{uploaded_file.name.replace('.xml', '')}_Report.pdf"
+else:
+    pdf_filename = "Pasted_Tax_Report.pdf"
+
+if show_results and xml_data:
+    st.success("Đã sẵn sàng dữ liệu xử lý!")
+    if st.button("🚀 Bắt đầu Chuyển đổi PDF", use_container_width=True):
+        with st.spinner('Máy chủ đang phân tích dữ liệu và tạo PDF...'):
+            try:
+                pdf_buffer = generate_tax_pdf(xml_data, title="HỒ SƠ THUẾ CHI TIẾT")
+                st.balloons()
+                
+                st.download_button(
+                    label="📥 Tải xuống kết quả bản PDF",
+                    data=pdf_buffer,
+                    file_name=pdf_filename,
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+            except Exception as e:
+                st.error(f"⚠️ Có lỗi xảy ra trong quá trình xử lý: {e}")
+else:
+    st.info("Vui lòng tải file hoặc dán mã XML để bắt đầu.")
 
 st.divider()
 footer_html = """

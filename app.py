@@ -157,7 +157,8 @@ if uploaded_files:
                 if col_view.button("👁️ Xem", key=f"preview_{i}", use_container_width=True):
                     import base64
                     base64_pdf = base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
-                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf" style="border-radius:10px; border:1px solid #ddd;"></iframe>'
+                    # Thay đổi iframe sang embed để tránh bị Chrome chặn
+                    pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="1000" type="application/pdf" style="border-radius:10px;">'
                     st.markdown(pdf_display, unsafe_allow_html=True)
 
                 col_pdf.download_button(

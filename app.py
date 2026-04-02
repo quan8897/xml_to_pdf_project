@@ -6,13 +6,104 @@ import zipfile
 from utils import generate_tax_pdf, extract_tax_metadata
 from utils_word import generate_tax_docx
 
-# PHẢI là lệnh Streamlit đầu tiên
-st.set_page_config(page_title="Tax XML to PDF Converter", page_icon="📄", layout="wide")
+# --- SEO & CONFIG ---
+st.set_page_config(
+    page_title="Phần mềm Chuyển đổi XML sang PDF Hồ sơ Thuế Miễn phí | Tax XML Converter",
+    page_icon="📄",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+    menu_items={
+        'Get Help': 'https://github.com',
+        'Report a bug': 'https://github.com',
+        'About': "# Giải pháp chuyển đổi XML Thuế sang PDF chuẩn iTaxViewer chuyên nghiệp."
+    }
+)
 
-# --- HEADER ---
-st.markdown("<h1 style='text-align: center; color: #FF4B4B;'>Mẫn Nhi mập ❤️</h1>", unsafe_allow_html=True)
-st.title("📄 Tax XML to PDF Converter")
-st.markdown("<p style='text-align: center;'>Ứng dụng chuyên đổi XML hồ sơ thuế sang bản PDF chuyên nghiệp.</p>", unsafe_allow_html=True)
+# Thêm SEO Metadata vào mã nguồn (cho các bot quét)
+st.markdown("""
+    <head>
+        <meta name="description" content="Chuyển đổi file XML hồ sơ thuế sang bản PDF chuyên nghiệp, giống hệt iTaxViewer. Tích hợp đầy đủ các mẫu 01/TTS, 02/TTS chuẩn Thông tư 40/2021/TT-BTC.">
+        <meta name="keywords" content="xml to pdf, thue, gdt, itaxviewer, chuyen doi xml sang pdf, khai thue online">
+        <meta name="author" content="Tax XML Solutions">
+    </head>
+""", unsafe_allow_html=True)
+
+# --- CUSTOM CSS (PREMIUM AESTHETICS) ---
+st.markdown("""
+<style>
+    /* Gradient Background cho Header */
+    .stAppHeader { background: transparent; }
+    .main {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    /* Thiết kế Header chuẩn SEO & Đẹp */
+    .header-container {
+        padding: 40px 20px;
+        background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    .header-container h1 {
+        font-size: 2.8rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 10px !important;
+        color: #ffffff !important;
+    }
+    .header-container p {
+        font-size: 1.2rem !important;
+        opacity: 0.9;
+        max-width: 800px;
+        margin: 0 auto !important;
+    }
+    
+    /* Tab Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        background-color: transparent !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: #ffffff;
+        border-radius: 10px 10px 0 0;
+        padding: 10px 25px;
+        font-weight: 600;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #2a5298 !important;
+        color: white !important;
+    }
+    
+    /* Card Container */
+    .css-1r6slb0 {
+        padding: 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    /* Footer */
+    .footer {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# --- HEADER SECTION ---
+st.markdown("""
+<div class="header-container">
+    <h1>📄 Chuyển đổi Hồ sơ Thuế XML sang PDF</h1>
+    <p>Giải pháp tối ưu chuyển đổi dữ liệu XML từ hệ thống Thuế (iCaNhan, HTKK) sang bản PDF in ấn chuyên nghiệp, đẹp mắt và chuẩn xác 100% theo Thông tư Bộ Tài chính.</p>
+</div>
+""", unsafe_allow_html=True)
 
 # --- TABS ---
 tab1, tab2 = st.tabs(["📤 Tải file XML", "📝 Dán đoạn mã XML"])

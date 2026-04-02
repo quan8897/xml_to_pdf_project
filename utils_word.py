@@ -224,17 +224,33 @@ def parse_xml_to_context(xml_content):
 # ─────────────────────────────────────────────
 def docx_to_pdf_bytes(docx_path):
     """
-    Chuyển .docx → .pdf bằng LibreOffice (Linux/Cloud)
-    hoặc Microsoft Word (Windows) nếu có.
-    Trả về bytes của PDF.
+    Chuyển .docx → .pdf bytes.
+    - Windows: dùng Microsoft Word (qua docx2pdf)
+    - Linux/Cloud: dùng LibreOffice (qua docx2pdf hoặc subprocess)
     """
-    out_dir = os.path.dirname(docx_path)
+    import tempfile
 
-    # Thử LibreOffice (Linux/Mac/Windows với LO)
+    pdf_path = docx_path.replace('.docx', '.pdf')
+
+    # Phương án 1: docx2pdf (Windows dùng Word, Linux dùng LibreOffice)
+    try:
+        from docx2pdf import convert
+        convert(docx_path, pdf_path)
+        if os.path.exists(pdf_path):
+            with open(pdf_path, 'rb') as f:
+                data = f.read()
+            os.remove(pdf_path)
+            return data
+    except Exception as e1:
+        pass
+
+    # Phương án 2: LibreOffice trực tiếp (fallback cho Linux/Cloud)
+    out_dir = os.path.dirname(docx_path) or '.'
     lo_commands = [
         'libreoffice', 'soffice',
         r'C:\Program Files\LibreOffice\program\soffice.exe',
         r'C:\Program Files (x86)\LibreOffice\program\soffice.exe',
+        '/usr/bin/libreoffice', '/usr/bin/soffice',
     ]
     for cmd in lo_commands:
         try:
@@ -242,7 +258,6 @@ def docx_to_pdf_bytes(docx_path):
                 [cmd, '--headless', '--convert-to', 'pdf', '--outdir', out_dir, docx_path],
                 capture_output=True, timeout=60
             )
-            pdf_path = docx_path.replace('.docx', '.pdf')
             if os.path.exists(pdf_path):
                 with open(pdf_path, 'rb') as f:
                     data = f.read()
@@ -251,26 +266,10 @@ def docx_to_pdf_bytes(docx_path):
         except (FileNotFoundError, subprocess.TimeoutExpired):
             continue
 
-    # Thử Microsoft Word COM (Windows only)
-    try:
-        import win32com.client
-        word = win32com.client.Dispatch("Word.Application")
-        word.Visible = False
-        doc = word.Documents.Open(os.path.abspath(docx_path))
-        pdf_path = docx_path.replace('.docx', '.pdf')
-        doc.SaveAs(os.path.abspath(pdf_path), FileFormat=17)
-        doc.Close()
-        word.Quit()
-        with open(pdf_path, 'rb') as f:
-            data = f.read()
-        os.remove(pdf_path)
-        return data
-    except Exception:
-        pass
-
     raise RuntimeError(
-        "Không tìm thấy LibreOffice hoặc Microsoft Word để chuyển PDF.\n"
-        "Vui lòng cài LibreOffice: https://www.libreoffice.org/download/"
+        "Không thể chuyển sang PDF. Vui lòng cài:\n"
+        "• Windows: Microsoft Word (thường đã có)\n"
+        "• Linux/Server: apt-get install libreoffice"
     )
 
 # ─────────────────────────────────────────────
@@ -293,30 +292,55 @@ def extract_tax_metadata(xml_content):
 def generate_tax_pdf(xml_content, title="BÁO CÁO THUẾ"):
     """
     Entry point chính: nhận XML → trả về PDF bytes.
-    Pipeline: XML → parse → fill Word template → LibreOffice → PDF
+    Pipeline ưu tiên:
+      1. XML → Word template (docxtpl) → LibreOffice/Word → PDF  (chất lượng 100%)
+      2. Fallback: XML → ReportLab → PDF  (khi không có LibreOffice/Word)
     """
     meta  = extract_tax_metadata(xml_content)
     ma_tk = meta.get("form", "")
 
-    # Với form 01/TTS (maTKhai=470): dùng Word template
+    # Với form 01/TTS (maTKhai=470): thử dùng Word template trước
     if ma_tk == "470" and os.path.exists(TEMPLATE_PATH):
         ctx, root = parse_xml_to_context(xml_content)
         tpl = DocxTemplate(TEMPLATE_PATH)
         tpl.render(ctx)
 
-        # Lưu .docx tạm
-        with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as tmp:
-            tmp_docx = tmp.name
-        tpl.save(tmp_docx)
-
-        # Convert → PDF
+        # Lưu .docx tạm — dùng named temp file với delete=False
+        tmp_fd, tmp_docx = tempfile.mkstemp(suffix='.docx')
+        os.close(tmp_fd)  # đóng file descriptor để tránh PermissionError
         try:
+            tpl.save(tmp_docx)
             pdf_bytes = docx_to_pdf_bytes(tmp_docx)
             return io.BytesIO(pdf_bytes)
+        except RuntimeError:
+            # LibreOffice / Word không có → fallback ReportLab
+            pass
+        except Exception:
+            pass
         finally:
-            if os.path.exists(tmp_docx):
+            try:
                 os.remove(tmp_docx)
-    else:
-        # Fallback sang ReportLab
-        from utils import generate_tax_pdf as fallback
-        return fallback(xml_content, title)
+            except Exception:
+                pass
+
+    # Fallback: ReportLab (luôn hoạt động, mọi platform)
+    from utils import generate_tax_pdf as fallback
+    return fallback(xml_content, title)
+
+def generate_tax_docx(xml_content):
+    """
+    Trả về file .docx đã điền dữ liệu (để người dùng tự in/chuyển PDF).
+    Hữu ích khi không có LibreOffice.
+    """
+    meta  = extract_tax_metadata(xml_content)
+    ma_tk = meta.get("form", "")
+
+    if ma_tk == "470" and os.path.exists(TEMPLATE_PATH):
+        ctx, _ = parse_xml_to_context(xml_content)
+        tpl = DocxTemplate(TEMPLATE_PATH)
+        tpl.render(ctx)
+        buf = io.BytesIO()
+        tpl.save(buf)
+        buf.seek(0)
+        return buf
+    return None

@@ -145,13 +145,21 @@ if uploaded_files:
         new_pdf_name = f"{today_str}_{orig_name}.pdf"
 
         with st.container(border=True):
-            col_check, col_info, col_pdf, col_docx = st.columns([1, 5, 2, 2])
+            col_check, col_info, col_view, col_pdf, col_docx = st.columns([1, 4, 1.5, 1.5, 1.5])
             is_selected = col_check.checkbox("Chọn", value=True, key=f"check_{i}")
             col_info.write(f"📄 **{uploaded_file.name}** ➞ `{new_pdf_name}`")
 
             xml_data = uploaded_file.read()
             try:
                 pdf_buffer = generate_tax_pdf(xml_data, title="HỒ SƠ THUẾ CHI TIẾT")
+                
+                # Nút xem trước
+                if col_view.button("👁️ Xem", key=f"preview_{i}", use_container_width=True):
+                    import base64
+                    base64_pdf = base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
+                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf" style="border-radius:10px; border:1px solid #ddd;"></iframe>'
+                    st.markdown(pdf_display, unsafe_allow_html=True)
+
                 col_pdf.download_button(
                     label="📥 PDF",
                     data=pdf_buffer,

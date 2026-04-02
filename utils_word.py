@@ -303,9 +303,21 @@ def generate_tax_pdf(xml_content, title="BÁO CÁO THUẾ"):
     if ma_tk == "470" and os.path.exists(TEMPLATE_PATH):
         ctx, root = parse_xml_to_context(xml_content)
         tpl = DocxTemplate(TEMPLATE_PATH)
-        tpl.render(ctx)
+        
+        # Xóa bỏ các dấu chấm ......... trong template để tránh bị ghi đè, tràn dòng
+        import re
+        for p in tpl.paragraphs:
+            # Nếu dòng không chứa thẻ Jinja {{...}} thì xóa sạch dãy chấm dài
+            p.text = re.sub(r'\.{3,}', '', p.text)
+        for tbl in tpl.tables:
+            for row in tbl.rows:
+                for cell in row.cells:
+                    for p in cell.paragraphs:
+                        p.text = re.sub(r'\.{3,}', '', p.text)
 
-        # Lưu .docx tạm — dùng named temp file với delete=False
+        tpl.render(ctx)
+        
+        # Lưu .docx tạm
         tmp_fd, tmp_docx = tempfile.mkstemp(suffix='.docx')
         os.close(tmp_fd)  # đóng file descriptor để tránh PermissionError
         try:
@@ -338,6 +350,17 @@ def generate_tax_docx(xml_content):
     if ma_tk == "470" and os.path.exists(TEMPLATE_PATH):
         ctx, _ = parse_xml_to_context(xml_content)
         tpl = DocxTemplate(TEMPLATE_PATH)
+        
+        # Làm sạch template: xóa dấu chấm thừa .............
+        import re
+        for p in tpl.paragraphs:
+            p.text = re.sub(r'\.{3,}', '', p.text)
+        for tbl in tpl.tables:
+            for row in tbl.rows:
+                for cell in row.cells:
+                    for p in cell.paragraphs:
+                        p.text = re.sub(r'\.{3,}', '', p.text)
+
         tpl.render(ctx)
         buf = io.BytesIO()
         tpl.save(buf)

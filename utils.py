@@ -57,17 +57,23 @@ def fnd_p(root, p_tag, c_tag):
                 if strip_ns(c.tag) == c_tag: return (c.text or "").strip()
     return ""
 
+from reportlab.pdfbase.pdfmetrics import registerFontFamily
+
 def register_fonts():
-    paths = [(r"C:\Windows\Fonts\times.ttf", r"C:\Windows\Fonts\timesbd.ttf", r"C:\Windows\Fonts\timesi.ttf"),
-             ("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
-              "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",
-              "/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf")]
+    paths = [
+        (r"C:\Windows\Fonts\times.ttf", r"C:\Windows\Fonts\timesbd.ttf", r"C:\Windows\Fonts\timesi.ttf"),
+        ("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+         "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",
+         "/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf"),
+    ]
     for r, b, i in paths:
         if os.path.exists(r):
             try:
                 pdfmetrics.registerFont(TTFont('T', r))
                 pdfmetrics.registerFont(TTFont('TB', b if os.path.exists(b) else r))
                 pdfmetrics.registerFont(TTFont('TI', i if os.path.exists(i) else r))
+                # LINK THEM AS ONE FAMILY
+                registerFontFamily('T', normal='T', bold='TB', italic='TI', boldItalic='TB')
                 return True
             except: continue
     return False
@@ -92,6 +98,7 @@ class NumberedCanvas(pdfcanvas.Canvas):
 # RENDERER
 # ─────────────────────────────────────────────
 def render_01TTS(root, elements, fn, fb, fi):
+    register_fonts(); fn, fb, fi = 'T', 'TB', 'TI'
     def N(name, **kw): return ParagraphStyle(name, fontName=fn, **kw)
     def B(name, **kw): return ParagraphStyle(name, fontName=fb, **kw)
     def I(name, **kw): return ParagraphStyle(name, fontName=fi, **kw)

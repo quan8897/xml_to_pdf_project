@@ -101,12 +101,18 @@ def xml_to_dict(element):
     result = {}
     for child in element:
         tag = strip_ns(child.tag)
-        # Sửa lỗi: Nếu len(child) == 0 nhưng child.text cũng None
-        value = xml_to_dict(child) if len(child) > 0 else (child.text if child.text is not None else "")
+        # Xử lý xsi:nil="true" và thẻ tự đóng (self-closing tags)
+        if len(child) > 0:
+            value = xml_to_dict(child)
+        else:
+            text = child.text
+            value = text.strip() if text and text.strip() else ""
         if tag in result:
-            if not isinstance(result[tag], list): result[tag] = [result[tag]]
+            if not isinstance(result[tag], list):
+                result[tag] = [result[tag]]
             result[tag].append(value)
-        else: result[tag] = value
+        else:
+            result[tag] = value
     return result
 
 def generate_tax_pdf(xml_content, title="BÁO CÁO THUẾ"):
@@ -173,21 +179,31 @@ def generate_tax_pdf(xml_content, title="BÁO CÁO THUẾ"):
 
     # 4. RENDER TABLES (DỮ LIỆU BẢNG)
     for t_title, rows in complex_data:
+        # Chỉ lấy các dòng là dict (bỏ qua chuỗi rỗng từ xsi:nil)
+        dict_rows = [r for r in rows if isinstance(r, dict)]
+        if not dict_rows:
+            continue
+
         elements.append(Paragraph(f"<b>PHẦN: {t_title.upper()}</b>", s_bold))
-        if rows and isinstance(rows[0], dict):
-            header = [Paragraph(f"<b>{strip_ns(k).upper()}</b>", s_bold) for k in rows[0].keys()]
-            data_rows = [header]
-            for r in rows:
-                data_rows.append([Paragraph(format_value(v), s_normal) for v in r.values()])
-            
-            t_grid = Table(data_rows, hAlign='LEFT', repeatRows=1)
-            t_grid.setStyle(TableStyle([
-                ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-                ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-            ]))
-            elements.append(t_grid)
-            elements.append(Spacer(1, 15))
+        # Lấy tập hợp keys từ tất cả các dòng (union) để tránh thiếu cột
+        all_keys = list(dict_rows[0].keys())
+        header = [Paragraph(f"<b>{strip_ns(k).upper()}</b>", s_bold) for k in all_keys]
+        data_rows = [header]
+        for r in dict_rows:
+            data_rows.append([Paragraph(format_value(r.get(k, "")), s_normal) for k in all_keys])
+        
+        t_grid = Table(data_rows, hAlign='LEFT', repeatRows=1)
+        t_grid.setStyle(TableStyle([
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke),
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('FONTSIZE', (0,0), (-1,-1), 8),
+            ('LEFTPADDING', (0,0), (-1,-1), 4),
+            ('RIGHTPADDING', (0,0), (-1,-1), 4),
+            ('TOPPADDING', (0,0), (-1,-1), 4),
+        ]))
+        elements.append(t_grid)
+        elements.append(Spacer(1, 15))
 
     # 5. FOOTER
     elements.append(Spacer(1, 20))

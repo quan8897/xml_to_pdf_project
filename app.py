@@ -13,48 +13,68 @@ tab1, tab2 = st.tabs(["📤 Tải file XML", "📝 Dán đoạn mã XML"])
 xml_data = None
 show_results = False
 
+import datetime
+
+# ... (sau phần tabs)
 with tab1:
-    st.subheader("1. Tải lên file XML")
-    uploaded_file = st.file_uploader("Chọn file XML thuế (Vd: Tờ khai thuế GTGT, TNCN...)", type=['xml'])
-    if uploaded_file is not None:
-        xml_data = uploaded_file.read()
-        show_results = True
+    st.subheader("1. Tải lên danh sách file XML")
+    uploaded_files = st.file_uploader("Chọn tối đa các file XML thuế (Hỗ trợ nhiều file cùng lúc):", type=['xml'], accept_multiple_files=True)
+    if uploaded_files:
+        st.success(f"Đã tải lên {len(uploaded_files)} file thành công!")
 
 with tab2:
     st.subheader("1. Dán nội dung XML")
     pasted_xml = st.text_area("Dán toàn bộ mã XML vào đây:", height=300, placeholder="<xml>...</xml>")
-    if pasted_xml:
-        xml_data = pasted_xml.encode('utf-8')
-        show_results = True
-
+    
 st.divider()
 st.subheader("2. Kết quả bản PDF")
 
-pdf_filename = "Tax_Report.pdf"
-if uploaded_file:
-    pdf_filename = f"{uploaded_file.name.replace('.xml', '')}_Report.pdf"
-else:
-    pdf_filename = "Pasted_Tax_Report.pdf"
+# Lấy ngày hiện tại YYYYMMDD
+today_str = datetime.datetime.now().strftime("%Y%m%d")
 
-if show_results and xml_data:
-    st.success("Đã sẵn sàng dữ liệu xử lý!")
-    if st.button("🚀 Bắt đầu Chuyển đổi PDF", use_container_width=True):
-        with st.spinner('Máy chủ đang phân tích dữ liệu và tạo PDF...'):
+# Xử lý khi có file tải lên
+if uploaded_files:
+    for uploaded_file in uploaded_files:
+        # Tạo tên file mới: YYYYMMDD_TênFile.pdf
+        orig_name = uploaded_file.name.replace('.xml', '').replace('.XML', '')
+        new_pdf_name = f"{today_str}_{orig_name}.pdf"
+        
+        with st.expander(f"📄 Xử lý: {uploaded_file.name}", expanded=True):
+            col_info, col_btn = st.columns([3, 1])
+            col_info.write(f"Tên file đích: **{new_pdf_name}**")
+            
+            # Đọc dữ liệu từng file
+            xml_data = uploaded_file.read()
             try:
                 pdf_buffer = generate_tax_pdf(xml_data, title="HỒ SƠ THUẾ CHI TIẾT")
-                st.balloons()
-                
-                st.download_button(
-                    label="📥 Tải xuống kết quả bản PDF",
+                col_btn.download_button(
+                    label="📥 Tải PDF",
                     data=pdf_buffer,
-                    file_name=pdf_filename,
+                    file_name=new_pdf_name,
                     mime="application/pdf",
-                    use_container_width=True
+                    key=f"btn_{uploaded_file.name}" # Khóa duy nhất cho mỗi nút
                 )
             except Exception as e:
-                st.error(f"⚠️ Có lỗi xảy ra trong quá trình xử lý: {e}")
+                st.error(f"Lỗi file {uploaded_file.name}: {e}")
+
+# Xử lý khi dán XML
+elif pasted_xml:
+    new_pdf_name = f"{today_str}_Pasted_Report.pdf"
+    st.info(f"Đã sẵn sàng dán mã. Tên file đích: **{new_pdf_name}**")
+    if st.button("🚀 Chuyển đổi mã dán", use_container_width=True):
+        try:
+            pdf_buffer = generate_tax_pdf(pasted_xml.encode('utf-8'), title="HỒ SƠ THUẾ CHI TIẾT")
+            st.download_button(
+                label="📥 Tải xuống kết quả PDF",
+                data=pdf_buffer,
+                file_name=new_pdf_name,
+                mime="application/pdf",
+                use_container_width=True
+            )
+        except Exception as e:
+            st.error(f"Lỗi: {e}")
 else:
-    st.info("Vui lòng tải file hoặc dán mã XML để bắt đầu.")
+    st.info("Chào bạn! Hãy tải file XML hoặc dán mã để bắt đầu xử lý nhé.")
 
 st.divider()
 footer_html = """

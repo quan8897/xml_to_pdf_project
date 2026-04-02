@@ -3,11 +3,10 @@ import os
 import io
 from utils import generate_tax_pdf
 
-# --- CẤU HÌNH GIAO DIỆN STREAMLIT ---
-st.set_page_config(page_title="Tax XML to PDF Converter", page_icon="📄", layout="wide")
-
+# --- GIAO DIỆN CHÍNH ---
+st.markdown("<h1 style='text-align: center; color: #FF4B4B;'>Mẫn Nhi mập ❤️</h1>", unsafe_allow_html=True)
 st.title("📄 Tax XML to PDF Converter")
-st.markdown("Ứng dụng chuyên đổi XML hồ sơ thuế sang bản PDF chuyên nghiệp.")
+st.markdown("<p style='text-align: center;'>Ứng dụng chuyên đổi XML hồ sơ thuế sang bản PDF chuyên nghiệp.</p>", unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["📤 Tải file XML", "📝 Dán đoạn mã XML"])
 # ... (giữ nguyên phần code xử lý bên trong)

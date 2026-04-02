@@ -8,12 +8,13 @@ st.set_page_config(page_title="Tax XML to PDF Converter", page_icon="📄", layo
 
 st.title("📄 Tax XML to PDF Converter")
 st.markdown("""
-Ứng dụng chuyên đổi XML hồ sơ thuế sang bản PDF chuyên nghiệp.
-Hỗ trợ 100% Tiếng Việt và các định dạng báo cáo hiện nay.
+Ứng dụng chuyên đổi XML hồ sơ thuế sang bản PDF chuyên nghiệp.  
+*Dành riêng cho Mẫn Nhi mập ❤️*
 """)
 
 col1, col2 = st.columns([1, 1])
 
+# ... (giữ nguyên phần col1, col2 cũ)
 with col1:
     st.subheader("1. Tải lên file XML")
     uploaded_file = st.file_uploader("Chọn file XML thuế (Vd: Tờ khai thuế GTGT, TNCN...)", type=['xml'])
@@ -37,10 +38,14 @@ with col2:
                         mime="application/pdf",
                         use_container_width=True
                     )
-                    
-                    st.info("Lưu ý: Nếu nội dung bị mất dấu Tiếng Việt, hãy chắc chắn bạn đã chạy ứng dụng trên môi trường có font phù hợp.")
                 except Exception as e:
                     st.error(f"⚠️ Có lỗi xảy ra trong quá trình xử lý: {e}")
 
 st.divider()
-st.info("💡 Hướng dẫn triển khai: Để ứng dụng chạy tốt nhất trên môi trường Linux/Cloud, hãy bỏ file font Roboto-Regular.ttf vào cùng thư mục dự án.")
+footer_html = """
+<div style="text-align: center; color: #888; font-size: 0.9em; padding: 20px;">
+    Mẫn Nhi mập và trái tim ❤️ | <a href="https://github.com/quan8897" target="_blank" style="color: #4A90E2; text-decoration: none;">Phát triển bởi Quan8897</a>
+</div>
+"""
+st.markdown(footer_html, unsafe_allow_html=True)
+st.info("💡 Lưu ý: Nếu nội dung bị mất dấu Tiếng Việt trên bản PDF, hãy chắc chắn bạn đã upload file font Roboto-Regular.ttf lên GitHub.")

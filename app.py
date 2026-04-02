@@ -3,7 +3,7 @@ import os
 import io
 import datetime
 import zipfile
-from utils import generate_tax_pdf
+from utils_word import generate_tax_pdf, extract_tax_metadata
 
 # PHẢI là lệnh Streamlit đầu tiên
 st.set_page_config(page_title="Tax XML to PDF Converter", page_icon="📄", layout="wide")

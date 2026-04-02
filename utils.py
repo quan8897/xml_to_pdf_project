@@ -144,8 +144,8 @@ def render_01TTS(root, elements, fn, fb, fi):
     elements.append(Paragraph('(Áp dụng đối với cá nhân có hoạt động cho thuê tài sản trực tiếp khai thuế với cơ quan thuế và tổ chức khai thay cho cá nhân)', s8c))
     elements.append(sp(4))
 
-    is_ds = "☒" if clean(fnd(root,'Header','khaiTheoPLuatDanSu')) else "□"
-    is_th = "☒" if clean(fnd(root,'Header','khaiTheoPLuatThue')) else "□"
+    is_ds = "☒" if fnd(root,'Header','khaiTheoPLuatDanSu').lower() == 'true' else "□"
+    is_th = "☒" if fnd(root,'Header','khaiTheoPLuatThue').lower() == 'true' else "□"
     elements.append(Table([[Paragraph("Cá nhân cho thuê tài sản trực tiếp khai thuế/ Tổ chức, cá nhân khai thuế thay, nộp thuế thay cho cá nhân ủy quyền theo quy định của pháp luật dân sự", s9), Paragraph(is_ds, s9c)]], colWidths=[485, 30]))
     elements.append(Table([[Paragraph("Doanh nghiệp, tổ chức kinh tế khai thuế thay, nộp thuế thay theo pháp luật thuế", s9), Paragraph(is_th, s9c)]], colWidths=[485, 30]))
     elements.append(sp(2))

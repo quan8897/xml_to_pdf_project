@@ -7,12 +7,10 @@ from utils import generate_tax_pdf
 st.set_page_config(page_title="Tax XML to PDF Converter", page_icon="📄", layout="wide")
 
 st.title("📄 Tax XML to PDF Converter")
-st.markdown("""
-Ứng dụng chuyên đổi XML hồ sơ thuế sang bản PDF chuyên nghiệp.  
-*Dành riêng cho Mẫn Nhi mập ❤️*
-""")
+st.markdown("Ứng dụng chuyên đổi XML hồ sơ thuế sang bản PDF chuyên nghiệp.")
 
 tab1, tab2 = st.tabs(["📤 Tải file XML", "📝 Dán đoạn mã XML"])
+# ... (giữ nguyên phần code xử lý bên trong)
 xml_data = None
 show_results = False
 
@@ -62,7 +60,7 @@ else:
 st.divider()
 footer_html = """
 <div style="text-align: center; color: #888; font-size: 0.9em; padding: 20px;">
-    Mẫn Nhi mập và trái tim ❤️ | <a href="https://github.com/quan8897" target="_blank" style="color: #4A90E2; text-decoration: none;">Phát triển bởi Quan8897</a>
+    Mẫn Nhi mập ❤️ | <a href="https://github.com/quan8897" target="_blank" style="color: #4A90E2; text-decoration: none;">Phát triển bởi Quan8897</a>
 </div>
 """
 st.markdown(footer_html, unsafe_allow_html=True)

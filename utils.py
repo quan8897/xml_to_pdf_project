@@ -51,21 +51,27 @@ def get(root, *tags):
 
 def register_fonts():
     paths = [
-        ("Roboto-Regular.ttf", "Roboto-Bold.ttf"),
-        ("arial.ttf", "arialbd.ttf"),
-        (r"C:\Windows\Fonts\arial.ttf", r"C:\Windows\Fonts\arialbd.ttf"),
+        # Times New Roman (Windows) - ưu tiên số 1
+        (r"C:\Windows\Fonts\times.ttf",   r"C:\Windows\Fonts\timesbd.ttf"),
+        # Liberation Serif = Times New Roman tương đương (Linux/Streamlit Cloud)
+        ("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+         "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf"),
+        # DejaVu Serif fallback (Linux)
+        ("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+         "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"),
+        # Arial fallback nếu không có Serif nào
+        (r"C:\Windows\Fonts\arial.ttf",   r"C:\Windows\Fonts\arialbd.ttf"),
         ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
          "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"),
-        ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
     ]
     for reg, bold in paths:
         if os.path.exists(reg):
             try:
-                pdfmetrics.registerFont(TTFont('VN', reg))
+                pdfmetrics.registerFont(TTFont('VN',  reg))
                 pdfmetrics.registerFont(TTFont('VNB', bold if os.path.exists(bold) else reg))
                 return True
-            except: continue
+            except:
+                continue
     return False
 
 # ─────────────────────────────────────────────

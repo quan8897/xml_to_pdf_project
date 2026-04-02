@@ -108,6 +108,7 @@ def render_01TTS(root, elements, fn, fb, fi):
 
     def clean(v): return '' if not v or str(v).lower() in ('false','true','0','none') else str(v).strip()
     def sp(h=2): return Spacer(1, h)
+    W = 515
 
     # XML DATA
     tenNNT = fnd(root,'NNT','tenNNT')

@@ -3,3 +3,4 @@ fonts-liberation2
 fonts-dejavu
 libxrender1
 libxext6
+libreoffice

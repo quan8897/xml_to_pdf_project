@@ -1,9 +1,6 @@
 
 [     UTC     ] Logs for xml-to-pdf-converter.streamlit.app/
 ────────────────────────────────────────────────────────────────────────────────────────
-[02:04:28] 🖥 Provisioning machine...
-[02:04:28] 🎛 Preparing system...
-[02:04:28] ⛓ Spinning up manager process...
 [02:04:27] 🚀 Starting up repository: 'xml_to_pdf_project', branch: 'main', main module: 'app.py'
 [02:04:27] 🐙 Cloning repository...
 [02:04:28] 🐙 Cloning into '/mount/src/xml_to_pdf_project'...
@@ -150,3 +147,238 @@ Streamlit is already installed
 [02:04:41] 📦 Processed dependencies!
 
 
+
+[02:15:25] 🐙 Pulling code changes from Github...
+[02:15:26] 📦 Processing dependencies...
+[02:15:26] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[02:15:26] 📦 Processed dependencies!
+[02:15:27] 🔄 Updated app!
+[02:21:13] 🐙 Pulling code changes from Github...
+[02:21:14] 📦 Processing dependencies...
+[02:21:14] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[02:21:14] 📦 Processed dependencies!
+[02:21:15] 🔄 Updated app!
+[02:23:52] 🐙 Pulling code changes from Github...
+[02:23:52] 📦 Processing dependencies...
+[02:23:52] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[02:23:52] 📦 Processed dependencies!
+[02:23:54] 🔄 Updated app!
+[02:25:41] 🐙 Pulling code changes from Github...
+[02:25:42] 📦 Processing dependencies...
+[02:25:42] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[02:25:42] 📦 Processed dependencies!
+[02:25:43] 🔄 Updated app!
+[02:39:09] 🐙 Pulling code changes from Github...
+[02:39:09] 📦 Processing dependencies...
+[02:39:09] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[02:39:09] 📦 Processed dependencies!
+[02:39:11] 🔄 Updated app!
+[02:43:46] 🐙 Pulling code changes from Github...
+[02:43:47] 📦 Processing dependencies...
+[02:43:47] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[02:43:47] 📦 Processed dependencies!
+────────────────────── Traceback (most recent call last) ───────────────────────
+  /home/adminuser/venv/lib/python3.14/site-packages/streamlit/runtime/scriptru  
+  nner/exec_code.py:129 in exec_func_with_error_handling                        
+                                                                                
+  /home/adminuser/venv/lib/python3.14/site-packages/streamlit/runtime/scriptru  
+  nner/script_runner.py:689 in code_to_exec                                     
+                                                                                
+  /mount/src/xml_to_pdf_project/app.py:4 in <module>                            
+                                                                                
+     1 import streamlit as st                                                   
+     2 import os                                                                
+     3 import io                                                                
+  ❱  4 from utils import generate_tax_pdf                                       
+     5                                                                          
+     6 # --- CẤU HÌNH GIAO DIỆN STREAMLIT ---                                   
+     7 st.set_page_config(page_title="Tax XML to PDF Converter", page_icon="📄  
+  in _find_and_load:1371                                                        
+  in _find_and_load_unlocked:1342                                               
+  in _load_unlocked:949                                                         
+────────────────────────────────────────────────────────────────────────────────
+KeyError: 'utils'
+[02:43:48] 🔄 Updated app!
+[03:01:56] 🐙 Pulling code changes from Github...
+[03:01:57] 📦 Processing dependencies...
+[03:01:57] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[03:01:57] 📦 Processed dependencies!
+[03:01:58] 🔄 Updated app!
+[03:03:36] 🐙 Pulling code changes from Github...
+[03:03:36] 📦 Processing dependencies...
+[03:03:36] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[03:03:36] 📦 Processed dependencies!
+[03:03:38] 🔄 Updated app!
+[03:06:04] 🐙 Pulling code changes from Github...
+[03:06:04] 📦 Processing dependencies...
+[03:06:04] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[03:06:04] 📦 Processed dependencies!
+[03:06:06] 🔄 Updated app!
+[03:07:42] 🐙 Pulling code changes from Github...
+[03:07:42] 📦 Processing dependencies...
+[03:07:42] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[03:07:42] 📦 Processed dependencies!
+[03:07:43] 🔄 Updated app!
+[03:12:27] 🐙 Pulling code changes from Github...
+[03:12:27] 📦 Processing dependencies...
+[03:12:27] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[03:12:27] 📦 Processed dependencies!
+[03:12:29] 🔄 Updated app!
+[03:23:24] 🐙 Pulling code changes from Github...
+[03:23:25] 📦 Processing dependencies...
+[03:23:25] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+Hit:1 http://deb.debian.org/debian-security bullseye-security InRelease
+Hit:2 http://deb.debian.org/debian trixie InRelease
+Get:3 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]
+Hit:4 http://deb.debian.org/debian-security trixie-security InRelease
+Hit:5 https://packages.microsoft.com/debian/11/prod bullseye InRelease
+Fetched 47.3 kB in 0s (358 kB/s)
+Reading package lists...[2026-04-02 03:23:26.333030] 
+Reading package lists...[2026-04-02 03:23:27.214957] 
+Building dependency tree...[2026-04-02 03:23:27.467691] 
+Reading state information...[2026-04-02 03:23:27.467969] 
+fonts-liberation is already the newest version (1:2.1.5-3).
+fonts-dejavu is already the newest version (2.37-8).
+libxrender1 is already the newest version (1:0.9.12-1).
+libxext6 is already the newest version (2:1.3.4-1+b3).
+The following NEW packages will be installed:
+  fonts-liberation2
+0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Need to get 6412 B of archives.
+After this operation, 15.4 kB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian trixie/main amd64 fonts-liberation2 all 1:2.1.5-3 [6412 B]
+debconf: unable to initialize frontend: Dialog
+debconf: (Dialog frontend will not work on a dumb terminal, an emacs shell buffer, or without a controlling terminal.)
+debconf: falling back to frontend: Readline
+debconf: unable to initialize frontend: Readline
+debconf: (This frontend requires a controlling tty.)
+debconf: falling back to frontend: Teletype
+debconf: unable to initialize frontend: Teletype
+debconf: (This frontend requires a controlling tty.)
+debconf: falling back to frontend: Noninteractive
+Fetched 6412 B in 0s (153 kB/s)
+Selecting previously unselected package fonts-liberation2.
+(Reading database ... [2026-04-02 03:23:28.843538] (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%[2026-04-02 03:23:28.843790] (Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%[2026-04-02 03:23:28.845767] (Reading database ... 75%[2026-04-02 03:23:28.847390] (Reading database ... 80%[2026-04-02 03:23:28.850001] (Reading database ... 85%[2026-04-02 03:23:28.851360] (Reading database ... 90%[2026-04-02 03:23:28.852385] (Reading database ... 95%[2026-04-02 03:23:28.854737] (Reading database ... 100%(Reading database ... 19932 files and directories currently installed.)
+Preparing to unpack .../fonts-liberation2_1%3a2.1.5-3_all.deb ...
+Unpacking fonts-liberation2 (1:2.1.5-3) ...
+Setting up fonts-liberation2 (1:2.1.5-3) ...
+[03:23:30] 📦 Processed dependencies!
+  Stopping...
+
+
+
+[03:23:32] 🔄 Updated app!
+[03:23:45] 🐙 Pulling code changes from Github...
+[03:23:46] 📦 Processing dependencies...
+[03:23:46] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[03:23:46] 📦 Processed dependencies!
+[03:23:47] 🔄 Updated app!
+[03:33:10] 🐙 Pulling code changes from Github...
+[03:33:10] 📦 Processing dependencies...
+[03:33:10] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[03:33:10] 📦 Processed dependencies!
+[03:33:12] 🔄 Updated app!
+[03:42:16] 🐙 Pulling code changes from Github...
+[03:42:17] 📦 Processing dependencies...
+[03:42:17] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[03:42:17] 📦 Processed dependencies!
+[03:42:18] 🔄 Updated app!
+[03:52:02] 🐙 Pulling code changes from Github...
+[03:52:03] 📦 Processing dependencies...
+[03:52:03] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[03:52:03] 📦 Processed dependencies!
+[03:52:04] 🔄 Updated app!
+[04:04:56] 🐙 Pulling code changes from Github...
+[04:04:56] 📦 Processing dependencies...
+[04:04:56] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[04:04:56] 📦 Processed dependencies!
+[04:04:57] 🔄 Updated app!
+2026-04-02 04:22:20.614 Session with id 7703b890-abc6-4a29-83a4-a177da2a67ea is already connected! Connecting to a new session.
+[04:58:23] 🐙 Pulling code changes from Github...
+[04:58:24] 📦 Processing dependencies...
+[04:58:24] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[04:58:24] 📦 Processed dependencies!
+[04:58:25] 🔄 Updated app!
+[05:02:41] 🐙 Pulling code changes from Github...
+[05:02:41] 📦 Processing dependencies...
+[05:02:41] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[05:02:41] 📦 Processed dependencies!
+[05:02:43] 🔄 Updated app!
+[05:08:37] 🐙 Pulling code changes from Github...
+[05:08:38] 📦 Processing dependencies...
+[05:08:38] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[05:08:38] 📦 Processed dependencies!
+[05:08:39] 🔄 Updated app!
+[05:48:33] 🐙 Pulling code changes from Github...
+[05:48:33] 📦 Processing dependencies...
+[05:48:33] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+
+──────────────────────────────────────── uv ───────────────────────────────────────────
+
+Using uv pip install.
+Using Python 3.14.3 environment at /home/adminuser/venv
+────────────────────── Traceback (most recent call last) ───────────────────────
+  /home/adminuser/venv/lib/python3.14/site-packages/streamlit/runtime/scriptru  
+  nner/exec_code.py:129 in exec_func_with_error_handling                        
+                                                                                
+  /home/adminuser/venv/lib/python3.14/site-packages/streamlit/runtime/scriptru  
+  nner/script_runner.py:689 in code_to_exec                                     
+                                                                                
+  /mount/src/xml_to_pdf_project/app.py:6 in <module>                            
+                                                                                
+      3 import io                                                               
+      4 import datetime                                                         
+      5 import zipfile                                                          
+  ❱   6 from utils import generate_tax_pdf                                      
+      7                                                                         
+      8 # PHẢI là lệnh Streamlit đầu tiên                                       
+      9 st.set_page_config(page_title="Tax XML to PDF Converter", page_icon="   
+                                                                                
+  /mount/src/xml_to_pdf_project/utils_word.py:12 in <module>                    
+                                                                                
+      9 import subprocess                                                       
+     10 import tempfile                                                         
+     11 import xml.etree.ElementTree as ET                                      
+  ❱  12 from docxtpl import DocxTemplate                                        
+     13                                                                         
+     14 # ─────────────────────────────────────────────                         
+     15 # CONSTANTS & HELPERS                                                   
+────────────────────────────────────────────────────────────────────────────────
+ModuleNotFoundError: No module named 'docxtpl'
+Resolved 39 packages in 295ms
+Prepared 3 packages in 180ms
+Installed 3 packages in 11ms
+ + docxtpl==0.20.2
+ + lxml==6.0.2
+ + python-docx==1.2.0
+Checking if Streamlit is installed
+Found Streamlit version 1.56.0 in the environment
+Installing rich for an improved exception logging
+Using uv pip install.
+Using Python 3.14.3 environment at /home/adminuser/venv
+Audited 1 package in 2ms
+
+────────────────────────────────────────────────────────────────────────────────────────
+
+[05:48:36] 🐍 Python dependencies were installed from /mount/src/xml_to_pdf_project/requirements.txt using uv.
+[05:48:36] 📦 Processed dependencies!
+  Stopping...
+
+
+
+[05:48:39] 🔄 Updated app!
+[05:53:31] 🐙 Pulling code changes from Github...
+[05:53:32] 📦 Processing dependencies...
+[05:53:32] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[05:53:32] 📦 Processed dependencies!
+[05:53:33] 🔄 Updated app!
+[06:42:25] 🐙 Pulling code changes from Github...
+[06:42:26] 📦 Processing dependencies...
+[06:42:26] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[06:42:26] 📦 Processed dependencies!
+[06:42:27] 🔄 Updated app!
+[06:58:02] 🐙 Pulling code changes from Github...
+[06:58:03] 📦 Processing dependencies...
+[06:58:03] 📦 Apt dependencies were installed from /mount/src/xml_to_pdf_project/packages.txt using apt-get.
+[06:58:03] 📦 Processed dependencies!
+[06:58:04] 🔄 Updated app!

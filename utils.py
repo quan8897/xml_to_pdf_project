@@ -350,14 +350,10 @@ def render_01TTS(root, elements, fn, fb):
         fld("10","Số CMND (trường hợp cá nhân khai thuế tự tính thuế):", ct10),
         fld("11","Số CMND (trường hợp hộp cá nhân khai thuế chưa có thông tin sau):", ct11),
         fld2("12a","Ngày sinh:", ct12a, "12b","Quốc tịch:", ct12b),
-
-        [Paragraph("[12.1] Trường hợp cá nhân kinh doanh chưa đăng ký thuế:", s9b), Paragraph("",s9)],
         fld2("12c.1","Mã:", ct12c_ma, "12c.2","Tên:", ct12c_ten, w2=40, w3=155),
         fld("12c","Số CMND/CCCD:", ct12c_so),
         fld2("12c.3","Ngày cấp:", ct12c_ngay, "12c.4","Loại nơi cấp:", ct12c_loai),
         fld("12c.5","Nơi cấp:", ct12c_noi),
-
-        [Paragraph("[12.2] Trường hợp CNKD không có CMND/CCCD:", s9b), Paragraph("",s9)],
         fld2("12d","Số hộ chiếu:", ct12d_so, "12d.1","Tên:", ct12d_ten, w2=50, w3=140),
         fld2("12d.2","Ngày cấp:", ct12d_ngay, "12d.3","Nơi cấp:", ct12d_noi),
         fld2("12dd","Số giấy thông hành:", ct12dd_so, "12dd.1","Tên:", ct12dd_ten, w2=60, w3=120),
@@ -422,7 +418,7 @@ def render_01TTS(root, elements, fn, fb):
          Paragraph(r[2],s8c), Paragraph(fmt_num(r[3]),s8r)]
         for r in tax_body
     ]
-    t_tax = Table(rows, colWidths=col_w, repeatRows=1, splitByRow=0)
+    t_tax = Table(rows, colWidths=col_w, repeatRows=1)
     t_tax.setStyle(TableStyle([
         ('GRID',          (0,0),(-1,-1), 0.5, colors.black),
         ('BACKGROUND',    (0,0),(-1,0),  colors.lightgrey),

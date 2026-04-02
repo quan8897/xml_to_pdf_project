@@ -1,8 +1,6 @@
-# Các gói hệ thống Debian cần thiết (Streamlit Cloud sẽ tự động cài)
 build-essential
 curl
-software-properties-common
-libgl1-mesa-glx
+libgl1
 libglib2.0-0
 libxrender1
 libxext6

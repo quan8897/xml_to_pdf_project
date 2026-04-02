@@ -29,33 +29,68 @@ with tab2:
 st.divider()
 st.subheader("2. Kết quả bản PDF")
 
+import zipfile
+
 # Lấy ngày hiện tại YYYYMMDD
 today_str = datetime.datetime.now().strftime("%Y%m%d")
 
 # Xử lý khi có file tải lên
 if uploaded_files:
-    for uploaded_file in uploaded_files:
-        # Tạo tên file mới: YYYYMMDD_TênFile.pdf
+    selected_files_data = [] # Lưu trữ dữ liệu các file được chọn để ZIP
+    
+    st.write("### Danh sách hàng đợi:")
+    for i, uploaded_file in enumerate(uploaded_files):
         orig_name = uploaded_file.name.replace('.xml', '').replace('.XML', '')
         new_pdf_name = f"{today_str}_{orig_name}.pdf"
         
-        with st.expander(f"📄 Xử lý: {uploaded_file.name}", expanded=True):
-            col_info, col_btn = st.columns([3, 1])
-            col_info.write(f"Tên file đích: **{new_pdf_name}**")
+        # Tạo khung bao quanh mỗi file kèm checkbox
+        with st.container(border=True):
+            col_check, col_info, col_btn = st.columns([1, 6, 2])
             
-            # Đọc dữ liệu từng file
+            # Checkbox để chọn file
+            is_selected = col_check.checkbox("Chọn", value=True, key=f"check_{i}")
+            col_info.write(f"📄 **{uploaded_file.name}** ➞ `{new_pdf_name}`")
+            
+            # Đọc dữ liệu và tạo PDF
             xml_data = uploaded_file.read()
             try:
                 pdf_buffer = generate_tax_pdf(xml_data, title="HỒ SƠ THUẾ CHI TIẾT")
+                
+                # Nút tải riêng lẻ (giữ lại cho tiện)
                 col_btn.download_button(
-                    label="📥 Tải PDF",
+                    label="Tải riêng",
                     data=pdf_buffer,
                     file_name=new_pdf_name,
                     mime="application/pdf",
-                    key=f"btn_{uploaded_file.name}" # Khóa duy nhất cho mỗi nút
+                    key=f"dl_{i}",
+                    use_container_width=True
                 )
+                
+                # Nếu được chọn, thêm vào danh sách ZIP
+                if is_selected:
+                    selected_files_data.append({"name": new_pdf_name, "content": pdf_buffer.getvalue()})
             except Exception as e:
                 st.error(f"Lỗi file {uploaded_file.name}: {e}")
+
+    # Nút Tải ZIP cho các file đã chọn
+    if selected_files_data:
+        st.divider()
+        st.write(f"👉 Tổng cộng: **{len(selected_files_data)}** file đã được chọn.")
+        
+        # Tạo file ZIP trong bộ nhớ
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for file in selected_files_data:
+                zf.writestr(file["name"], file["content"])
+        
+        st.download_button(
+            label="📥 TẢI TRỌN BỘ FILE ĐÃ CHỌN (.ZIP)",
+            data=zip_buffer.getvalue(),
+            file_name=f"{today_str}_DS_Ho_So_Thue.zip",
+            mime="application/zip",
+            use_container_width=True,
+            type="primary"
+        )
 
 # Xử lý khi dán XML
 elif pasted_xml:

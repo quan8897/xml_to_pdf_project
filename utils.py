@@ -46,18 +46,27 @@ def register_fonts():
         return True
     return False
 
+def strip_ns(tag):
+    """Loại bỏ phần Namespace {http://...} lằng nhằng khỏi tên thẻ."""
+    if tag is not None and '}' in tag:
+        return tag.split('}')[-1]
+    return tag
+
 def xml_to_dict(element):
+    """Chuyển XML thành dictionary và làm sạch Namespace."""
     result = {}
     for child in element:
+        tag_cleaned = strip_ns(child.tag)
         if len(child) > 0:
             value = xml_to_dict(child)
         else:
             value = child.text
-        if child.tag in result:
-            if isinstance(result[child.tag], list): result[child.tag].append(value)
-            else: result[child.tag] = [result[child.tag], value]
+            
+        if tag_cleaned in result:
+            if isinstance(result[tag_cleaned], list): result[tag_cleaned].append(value)
+            else: result[tag_cleaned] = [result[tag_cleaned], value]
         else:
-            result[child.tag] = value
+            result[tag_cleaned] = value
     return result
 
 def generate_tax_pdf(xml_content, title="BÁO CÁO THUẾ"):
@@ -78,7 +87,9 @@ def generate_tax_pdf(xml_content, title="BÁO CÁO THUẾ"):
     vn_title = ParagraphStyle(name='VNTitle', fontName=font_bold, fontSize=18, alignment=1, spaceAfter=20)
 
     elements = []
-    header_text = f"{title}: {root.tag.upper()}"
+    # Làm sạch Root tag cho tiêu đề
+    root_tag_cleaned = strip_ns(root.tag).upper()
+    header_text = f"{title}: {root_tag_cleaned}"
     elements.append(Paragraph(header_text, vn_title))
     
     def build_structure(data, level=0):

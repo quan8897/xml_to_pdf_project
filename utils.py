@@ -103,6 +103,7 @@ def render_01TTS(root, elements, fn, fb, fi):
     s8bc = B('s8bc', fontSize=8, leading=10, alignment=1)
     s9  = N('s9', fontSize=9, leading=11)
     s9b = B('s9b', fontSize=9, leading=11)
+    s9c = N('s9c', fontSize=9, leading=11, alignment=1)
     s9bc = B('s9bc', fontSize=9, leading=12, alignment=1)
     s11bc = B('s11bc', fontSize=11, leading=14, alignment=1)
 
@@ -153,28 +154,28 @@ def render_01TTS(root, elements, fn, fb, fi):
     elements.append(Paragraph(f"<b>[02] Lần đầu:</b> [{'x' if loai=='C' else ' '}]    <b>[03] Bổ sung lần thứ:</b> [ {soLan if soLan and soLan!='0' else ''} ]", s9))
     elements.append(sp(3))
 
-    def rowplain(c, l, v): return Paragraph(f"<b>[{c}] {l}</b> {v}", s9)
+    def rowplain(c, l, v): return Paragraph(f"<b>[{c}] {l}</b> <b>{v}</b>", s9)
 
     elements.append(rowplain('04', 'Tên người nộp thuế:', tenNNT.upper()))
     elements.append(rowplain('05', 'Mã số thuế:', mst))
     elements.append(rowplain('06', 'Địa chỉ liên hệ:', dchi))
-    elements.append(Paragraph(f"<b>[07] Điện thoại:</b> {dthoai}   <b>[08] Fax:</b> {fax}   <b>[09] E-mail:</b> {email}", s9))
+    elements.append(Paragraph(f"<b>[07] Điện thoại:</b> <b>{dthoai}</b>   <b>[08] Fax:</b> <b>{fax}</b>   <b>[09] E-mail:</b> <b>{email}</b>", s9))
     elements.append(rowplain('10', 'Số CMND (trường hợp cá nhân quốc tịch Việt Nam):', clean(fnd(root,'Header','ct10'))))
     elements.append(rowplain('11', 'Hộ chiếu (trường hợp cá nhân không có quốc tịch Việt Nam):', clean(fnd(root,'Header','ct11'))))
     
     elements.append(Paragraph("<b>[12] Trường hợp cá nhân kinh doanh chưa đăng ký thuế thì khai thêm các thông tin sau:</b>", s9))
-    elements.append(Paragraph(f"<b>[12a] Ngày sinh:</b> {fnd_p(root,'CNKDChuaDangKyThue','ct12a_ngaySinh')}   <b>[12b] Quốc tịch:</b> {fnd_p(root,'CNKDChuaDangKyThue','ct12b_tenQuocTich')}", s9))
-    elements.append(Paragraph(f"<b>[12c] Số CMND/CCCD:</b> {fnd_p(root,'CNKDChuaDangKyThue','ct12c_soCMND_CCCD')}  <b>[12c.1] Ngày cấp:</b> {fnd_p(root,'CNKDChuaDangKyThue','ct12c_1_ngayCap')}  <b>[12c.2] Nơi cấp:</b> {fnd_p(root,'CNKDChuaDangKyThue','ct12c_2_noiCap_ten')}", s9))
+    elements.append(Paragraph(f"<b>[12a] Ngày sinh:</b> <b>{fnd_p(root,'CNKDChuaDangKyThue','ct12a_ngaySinh')}</b>   <b>[12b] Quốc tịch:</b> <b>{fnd_p(root,'CNKDChuaDangKyThue','ct12b_tenQuocTich')}</b>", s9))
+    elements.append(Paragraph(f"<b>[12c] Số CMND/CCCD:</b> <b>{fnd_p(root,'CNKDChuaDangKyThue','ct12c_soCMND_CCCD')}</b>  <b>[12c.1] Ngày cấp:</b> <b>{fnd_p(root,'CNKDChuaDangKyThue','ct12c_1_ngayCap')}</b>  <b>[12c.2] Nơi cấp:</b> <b>{fnd_p(root,'CNKDChuaDangKyThue','ct12c_2_noiCap_ten')}</b>", s9))
     
     # 12 sub-fields detail
     elements.append(Paragraph("Trường hợp cá nhân kinh doanh thuộc đối tượng không có CMND/CCCD tại Việt Nam thì kê khai thông tin tại một trong các thông tin sau:", s8))
-    elements.append(Paragraph(f"<b>[12d] Số hộ chiếu:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12d_soHoChieu')}  <b>[12d.1] Ngày cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12d_1_ngayCap')}  <b>[12d.2] Nơi cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12d_2_noiCap_ten')}", s9))
+    elements.append(Paragraph(f"<b>[12d] Số hộ chiếu:</b> <b>{fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12d_soHoChieu')}</b>  <b>[12d.1] Ngày cấp:</b> <b>{fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12d_1_ngayCap')}</b>  <b>[12d.2] Nơi cấp:</b> <b>{fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12d_2_noiCap_ten')}</b>", s9))
     elements.append(rowplain('12đ', 'Số giấy thông hành (đối với thương nhân nước ngoài):', fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12dd_soGiayThongHanh')))
-    elements.append(Paragraph(f"<b>[12đ.1] Ngày cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12dd_1_ngayCap')}  <b>[12đ.2] Nơi cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12dd_2_noiCap_ten')}", s9))
+    elements.append(Paragraph(f"<b>[12đ.1] Ngày cấp:</b> <b>{fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12dd_1_ngayCap')}</b>  <b>[12đ.2] Nơi cấp:</b> <b>{fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12dd_2_noiCap_ten')}</b>", s9))
     elements.append(rowplain('12e', 'Số CMND biên giới (đối với thương nhân nước ngoài):', fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12e_soCMNDBienGioi')))
-    elements.append(Paragraph(f"<b>[12e.1] Ngày cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12e_1_ngayCap')}  <b>[12e.2] Nơi cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12e_2_noiCap_ten')}", s9))
+    elements.append(Paragraph(f"<b>[12e.1] Ngày cấp:</b> <b>{fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12e_1_ngayCap')}</b>  <b>[12e.2] Nơi cấp:</b> <b>{fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12e_2_noiCap_ten')}</b>", s9))
     elements.append(rowplain('12f', 'Số Giấy tờ chứng thực cá nhân khác:', fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12f_soGiayToKhac')))
-    elements.append(Paragraph(f"<b>[12f.1] Ngày cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12f_1_ngayCap')}  <b>[12f.2] Nơi cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12f_2_noiCap_ten')}", s9))
+    elements.append(Paragraph(f"<b>[12f.1] Ngày cấp:</b> <b>{fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12f_1_ngayCap')}</b>  <b>[12f.2] Nơi cấp:</b> <b>{fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12f_2_noiCap_ten')}</b>", s9))
     
     elements.append(Paragraph("<b>[12g] Nơi đăng ký thường trú:</b>", s9))
     elements.append(rowplain('12g.1', 'Số nhà, đường phố/xóm/ấp/thôn:', fnd_p(root,'CT12g','ct12g_soNha')))
@@ -188,8 +189,8 @@ def render_01TTS(root, elements, fn, fb, fi):
     elements.append(rowplain('12h.3', 'Quận/Huyện/Thị xã/Thành phố thuộc tỉnh:', fnd_p(root,'CT12h','ct12h_tenQuan')))
     elements.append(rowplain('12h.4', 'Tỉnh/Thành phố:', fnd_p(root,'CT12h','ct12h_tenTinh')))
     
-    elements.append(Paragraph(f"<b>[12i] Giấy chứng nhận đăng ký hộ kinh doanh (nếu có): Số:</b> {fnd_p(root,'CT12i','ct12i_soGiayTo')}", s9))
-    elements.append(Paragraph(f"<b>[12i.1] Ngày cấp:</b> {fnd_p(root,'CT12i','ct12i_ngayCap')}  <b>[12i.2] Cơ quan cấp:</b> {fnd_p(root,'CT12i','ct12i_coQuanCap')}", s9))
+    elements.append(Paragraph(f"<b>[12i] Giấy chứng nhận đăng ký hộ kinh doanh (nếu có): Số:</b> <b>{fnd_p(root,'CT12i','ct12i_soGiayTo')}</b>", s9))
+    elements.append(Paragraph(f"<b>[12i.1] Ngày cấp:</b> <b>{fnd_p(root,'CT12i','ct12i_ngayCap')}</b>  <b>[12i.2] Cơ quan cấp:</b> <b>{fnd_p(root,'CT12i','ct12i_coQuanCap')}</b>", s9))
     _vun = fmt_num(fnd(root,'Header','ct12k'))
     elements.append(rowplain('12k', 'Vốn kinh doanh (đồng):', _vun if _vun and _vun!='0' else '0'))
     
@@ -199,7 +200,7 @@ def render_01TTS(root, elements, fn, fb, fi):
     elements.append(rowplain('16', 'Tổ chức nộp thuế thay (nếu có):', clean(fnd(root,'ToChucNopThueThay','ct16'))))
     elements.append(rowplain('17', 'Mã số thuế:', clean(fnd(root,'ToChucNopThueThay','ct17'))))
     elements.append(rowplain('18', 'Địa chỉ:', clean(fnd(root,'ToChucNopThueThay','ct18'))))
-    elements.append(Paragraph(f"<b>[19] Điện thoại:</b> {fnd(root,'ToChucNopThueThay','ct19')}  <b>[20] Fax:</b> {fnd(root,'ToChucNopThueThay','ct20')}  <b>[21] Email:</b> {fnd(root,'ToChucNopThueThay','ct21')}", s9))
+    elements.append(Paragraph(f"<b>[19] Điện thoại:</b> <b>{fnd(root,'ToChucNopThueThay','ct19')}</b>  <b>[20] Fax:</b> <b>{fnd(root,'ToChucNopThueThay','ct20')}</b>  <b>[21] Email:</b> <b>{fnd(root,'ToChucNopThueThay','ct21')}</b>", s9))
     elements.append(rowplain('22', 'Văn bản ủy quyền (nếu có): Số: ngày tháng năm', fnd(root,'Header','maHDong')))
     elements.append(sp(5))
 

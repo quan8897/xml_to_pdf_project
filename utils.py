@@ -286,18 +286,21 @@ def render_01TTS(root, elements, fn, fb):
         "(Áp dụng đối với cá nhân có hoạt động cho thuê tài sản trực tiếp khai thuế với cơ quan thuế "
         "trừ cá nhân trực tiếp ký hợp đồng thuê với tổ chức kinh tế; thay cho cá nhân)", s8c))
     elements.append(sp(3))
-    elements.append(Paragraph(
-        f"Cá nhân cho thuê tài sản trực tiếp khai thuế: Tổ chức, cá nhân khai thuế thay, "
-        f"nộp thuế thay cho cá nhân ký quyền theo quy định của pháp luật dân sự(*): [<b>{is_ds}</b>]", s9))
-    elements.append(Paragraph(
-        f"Doanh nghiệp, tổ chức có tư cách pháp nhân khai thuế thay, "
-        f"nộp thuế thay cho cá nhân: [<b>{is_thue}</b>]", s9))
-    elements.append(sp(2))
-    elements.append(Paragraph(
-        f"[<b>{is_dau}</b>] Kỳ tính thuế: Từ ngày: <b>{kyTuNgay}</b>   Đến ngày: <b>{kyDenNgay}</b>", s9))
-    elements.append(Paragraph(
-        f"[<b>{is_bs}</b>] Lần đầu: [<b>{'X' if soLan=='0' else ' '}</b>]   "
-        f"Bổ sung lần thứ [<b>{soLan if soLan!='0' else ''}</b>]", s9))
+    ky_rows = [
+        [Paragraph("[01] Kỳ tính thuế:", s9),
+         Paragraph(f"Từ ngày: <b>{kyTuNgay}</b> &nbsp;&nbsp;&nbsp; Đến ngày: <b>{kyDenNgay}</b>", s9)],
+        [Paragraph("[02] Lần đầu:", s9),
+         Paragraph(
+             f"<b>{'☑' if loai=='C' else '☐'}</b> Lần đầu"
+             f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+             f"<b>{'☑' if loai=='B' else '☐'}</b> Bổ sung lần thứ: "
+             f"<b>{soLan if soLan and soLan != '0' else ''}</b>", s9)],
+    ]
+    t_ky = Table(ky_rows, colWidths=[140, 375])
+    t_ky.setStyle(TableStyle([('TOPPADDING',(0,0),(-1,-1),1),
+                               ('BOTTOMPADDING',(0,0),(-1,-1),1),
+                               ('LEFTPADDING',(0,0),(-1,-1),0)]))
+    elements.append(t_ky)
     elements.append(sp(4))
 
     # ── 3. THÔNG TIN NGƯỜI NỘP THUẾ ─────────────────────────────────

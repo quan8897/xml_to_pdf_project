@@ -286,17 +286,37 @@ def render_01TTS(root, elements, fn, fb):
         "(Áp dụng đối với cá nhân có hoạt động cho thuê tài sản trực tiếp khai thuế với cơ quan thuế "
         "trừ cá nhân trực tiếp ký hợp đồng thuê với tổ chức kinh tế; thay cho cá nhân)", s8c))
     elements.append(sp(3))
+    elements.append(Paragraph(
+        f"Cá nhân cho thuê tài sản trực tiếp khai thuế/Tổ chức, cá nhân khai thuế thay, nộp thuế thay "
+        f"cho cá nhân ủy quyền theo quy định của pháp luật dân sự: {is_ds}", s9))
+    elements.append(Paragraph(
+        f"Doanh nghiệp, tổ chức kinh tế khai thuế thay, nộp thuế thay theo pháp luật thuế: {is_thue}", s9))
+    elements.append(sp(2))
+
+    # [01] Kỳ tính thuế và các mục con
+    # Xác định năm, tháng từ kỳ tính thuế
+    ky_nam = ""; ky_thang = ""; ky_quy = ""
+    if kyTuNgay:
+        parts = kyTuNgay.replace('/', '-').split('-')
+        if len(parts) >= 3:
+            ky_nam   = parts[0] if len(parts[0]) == 4 else parts[2]
+            ky_thang = parts[1].lstrip('0') if len(parts) >= 2 else ""
+
     ky_rows = [
-        [Paragraph("[01] Kỳ tính thuế:", s9),
-         Paragraph(f"Từ ngày: <b>{kyTuNgay}</b> &nbsp;&nbsp;&nbsp; Đến ngày: <b>{kyDenNgay}</b>", s9)],
-        [Paragraph("[02] Lần đầu:", s9),
-         Paragraph(
-             f"<b>{'☑' if loai=='C' else '☐'}</b> Lần đầu"
-             f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-             f"<b>{'☑' if loai=='B' else '☐'}</b> Bổ sung lần thứ: "
-             f"<b>{soLan if soLan and soLan != '0' else ''}</b>", s9)],
+        [Paragraph("[01] Kỳ tính thuế:", s9), Paragraph("", s9)],
+        [Paragraph("  [01a] Năm:", s9),
+         Paragraph(f"<b>{ky_nam}</b>", s9)],
+        [Paragraph("  [01b] Kỳ thanh toán:", s9),
+         Paragraph(f"Từ ngày: <b>{kyTuNgay}</b> &nbsp;&nbsp; Đến ngày: <b>{kyDenNgay}</b>", s9)],
+        [Paragraph("  [01c] Tháng:", s9),
+         Paragraph(f"<b>{ky_thang}</b> năm <b>{ky_nam}</b>", s9)],
+        [Paragraph("  [01d] Quý:", s9),
+         Paragraph(f"<b>{ky_quy}</b> năm <b>{ky_nam}</b>", s9)],
+        [Paragraph("[02] Lần đầu: <b>{'\u2611' if loai=='C' else '\u2610'}</b>"
+                   f"  &nbsp;&nbsp;&nbsp;&nbsp;  [03] Bổ sung lần thứ:", s9),
+         Paragraph(f"<b>{soLan if soLan and soLan != '0' else ''}</b>", s9)],
     ]
-    t_ky = Table(ky_rows, colWidths=[140, 375])
+    t_ky = Table(ky_rows, colWidths=[200, 315])
     t_ky.setStyle(TableStyle([('TOPPADDING',(0,0),(-1,-1),1),
                                ('BOTTOMPADDING',(0,0),(-1,-1),1),
                                ('LEFTPADDING',(0,0),(-1,-1),0)]))
@@ -350,37 +370,47 @@ def render_01TTS(root, elements, fn, fb):
     dia_h = " ".join(filter(None,[ct12h_nha,ct12h_ph,ct12h_qu,ct12h_ti]))
 
     ext = [
-        fld("10","Số CMND (trường hợp cá nhân khai thuế tự tính thuế):", ct10),
-        fld("11","Số CMND (trường hợp hộp cá nhân khai thuế chưa có thông tin sau):", ct11),
+        fld("10","Số CMND (trường hợp cá nhân quốc tịch Việt Nam):", ct10),
+        fld("11","Hộ chiếu (trường hợp cá nhân không có quốc tịch Việt Nam):", ct11),
+        [Paragraph("[12] Trường hợp cá nhân kinh doanh chưa đăng ký thuế thì khai thêm các thông tin sau:", s8b),
+         Paragraph("", s9)],
         fld2("12a","Ngày sinh:", ct12a, "12b","Quốc tịch:", ct12b),
-        fld2("12c.1","Mã:", ct12c_ma, "12c.2","Tên:", ct12c_ten, w2=40, w3=155),
         fld("12c","Số CMND/CCCD:", ct12c_so),
-        fld2("12c.3","Ngày cấp:", ct12c_ngay, "12c.4","Loại nơi cấp:", ct12c_loai),
-        fld("12c.5","Nơi cấp:", ct12c_noi),
-        fld2("12d","Số hộ chiếu:", ct12d_so, "12d.1","Tên:", ct12d_ten, w2=50, w3=140),
-        fld2("12d.2","Ngày cấp:", ct12d_ngay, "12d.3","Nơi cấp:", ct12d_noi),
-        fld2("12dd","Số giấy thông hành:", ct12dd_so, "12dd.1","Tên:", ct12dd_ten, w2=60, w3=120),
-        fld2("12dd.2","Ngày cấp:", ct12dd_ngay, "12dd.3","Nơi cấp:", ct12dd_noi),
-        fld2("12e","Số CMND biên giới:", ct12e_so, "12e.1","Tên:", ct12e_ten, w2=60, w3=120),
-        fld2("12e.2","Ngày cấp:", ct12e_ngay, "12e.3","Nơi cấp:", ct12e_noi),
-        fld2("12f","Số giấy tờ khác:", ct12f_so, "12f.1","Tên:", ct12f_ten, w2=60, w3=120),
-        fld2("12f.2","Ngày cấp:", ct12f_ngay, "12f.3","Nơi cấp:", ct12f_noi),
-
-        fld("12g","Địa chỉ nơi cho thuê:", dia_g),
-        fld2("12g.1","Phường/xã:", ct12g_ph, "12g.2","Quận/huyện:", ct12g_qu),
-        fld("12g.3","Tỉnh/Thành phố:", ct12g_ti),
-        fld("12h","Địa chỉ đăng ký hộ chiếu/kinh doanh:", dia_h),
-        fld2("12h.1","Phường/xã:", ct12h_ph, "12h.2","Quận/huyện:", ct12h_qu),
-        fld("12h.3","Tỉnh/Thành phố:", ct12h_ti),
-        [Paragraph("[12i] Số giấy tờ:", s9),
+        fld2("12c.1","Ngày cấp:", ct12c_ngay, "12c.2","Nơi cấp:", ct12c_noi),
+        [Paragraph("Trường hợp cá nhân kinh doanh thuộc đối tượng không có CMND/CCCD tại Việt Nam "
+                   "thì kê khai thông tin tại một trong các thông tin sau:", s8),
+         Paragraph("", s9)],
+        fld2("12d","Số hộ chiếu:", ct12d_so, "12d.1","Ngày cấp:", ct12d_ngay, w2=65, w3=110),
+        fld("12d.2","Nơi cấp:", ct12d_noi),
+        fld2("12đ","Số giấy thông hành (đối với thương nhân nước ngoài):", ct12dd_so,
+             "12đ.1","Ngày cấp:", ct12dd_ngay, w2=65, w3=80),
+        fld("12đ.2","Nơi cấp:", ct12dd_noi),
+        fld2("12e","Số CMND biên giới (đối với thương nhân nước ngoài):", ct12e_so,
+             "12e.1","Ngày cấp:", ct12e_ngay, w2=65, w3=80),
+        fld("12e.2","Nơi cấp:", ct12e_noi),
+        fld2("12f","Số Giấy tờ chứng thực cá nhân khác:", ct12f_so,
+             "12f.1","Ngày cấp:", ct12f_ngay, w2=65, w3=80),
+        fld("12f.2","Nơi cấp:", ct12f_noi),
+        [Paragraph("[12g] Nơi đăng ký thường trú:", s9), Paragraph("",s9)],
+        fld("12g.1","Số nhà, đường phố/xóm/ấp/thôn:", ct12g_nha),
+        fld2("12g.2","Phường/xã/Thị trấn:", ct12g_ph, "12g.3","Quận/Huyện:", ct12g_qu),
+        fld("12g.4","Tỉnh/Thành phố:", ct12g_ti),
+        [Paragraph("[12h] Chỗ ở hiện tại:", s9), Paragraph("",s9)],
+        fld("12h.1","Số nhà, đường phố/xóm/ấp/thôn:", ct12h_nha),
+        fld2("12h.2","Phường/xã/Thị trấn:", ct12h_ph, "12h.3","Quận/Huyện:", ct12h_qu),
+        fld("12h.4","Tỉnh/Thành phố:", ct12h_ti),
+        [Paragraph("[12i] Giấy chứng nhận đăng ký hộ kinh doanh (nếu có): số:", s9),
          Table([[Paragraph(f"<b>{ct12i_so}</b>",s9),
                  Paragraph("[12i.1] Ngày cấp:",s9), Paragraph(f"<b>{ct12i_ngay}</b>",s9),
-                 Paragraph("[12i.2] Cơ quan:",s9),  Paragraph(f"<b>{ct12i_cq}</b>",s9)]],
-               colWidths=[80,65,65,65,10],
+                 Paragraph("[12i.2] Cơ quan cấp:",s9), Paragraph(f"<b>{ct12i_cq}</b>",s9)]],
+               colWidths=[50,70,65,75,20],
                style=[('LEFTPADDING',(0,0),(-1,-1),0),('TOPPADDING',(0,0),(-1,-1),0),
                       ('BOTTOMPADDING',(0,0),(-1,-1),0)])],
         fld("12k","Vốn kinh doanh (đồng):", ct12k),
-        fld("16","Tổ chức nộp thuế thay:", tc16),
+        fld("13","Tên đại lý thuế (nếu có):", ""),
+        fld("14","Mã số thuế đại lý:", ""),
+        fld("15","Hợp đồng đại lý thuế: số", ""),
+        fld("16","Tổ chức khai, nộp thuế thay (nếu có):", tc16),
         fld2("17","Mã số thuế:", tc17, "18","Địa chỉ:", tc18, w2=60, w3=140),
         [Paragraph("[19] Điện thoại:", s9),
          Table([[Paragraph(f"<b>{tc19}</b>",s9),
@@ -389,7 +419,7 @@ def render_01TTS(root, elements, fn, fb):
                colWidths=[80,40,65,45,55],
                style=[('LEFTPADDING',(0,0),(-1,-1),0),('TOPPADDING',(0,0),(-1,-1),0),
                       ('BOTTOMPADDING',(0,0),(-1,-1),0)])],
-        fld("22","Mã hợp đồng:", maHDong),
+        fld("22","Văn bản ủy quyền (nếu có): số", maHDong),
     ]
 
     t_ext = Table(ext, colWidths=[195, 320])
@@ -450,24 +480,34 @@ def render_01TTS(root, elements, fn, fb):
 
     # ── 6. CAM KẾT + KÝ TÊN ─────────────────────────────────────────
     elements.append(Paragraph(
-        "Tôi cam đoan số liệu khai trên là đúng và chịu trách nhiệm trước pháp luật về số liệu đã khai...", s9))
-    elements.append(sp(6))
+        "Tôi cam đoan số liệu khai trên là đúng và chịu trách nhiệm trước pháp luật về những số liệu đã khai./.", s9))
+    elements.append(sp(8))
     now = datetime.datetime.now()
-    elements.append(Paragraph(f"Ngày {now.day:02d} tháng {now.month:02d} năm {now.year}", s9r))
-    elements.append(sp(4))
 
-    sig = Table([[
-        Paragraph("<b>NHÂN VIÊN ĐẠI LÝ THUẾ</b>", s9bi),
-        Paragraph("<b>NGƯỜI NỘP THUẾ hoặc<br/>ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ</b>", s9bi),
-    ],[
-        Paragraph("Họ và tên:", s9),
-        Paragraph("(Ký, ghi rõ họ tên, đóng dấu (nếu có))", s8),
-    ],[
-        Paragraph("Chứng chỉ hành nghề số:", s9), "",
-    ]], colWidths=[257, 258])
-    sig.setStyle(TableStyle([('ALIGN',(0,0),(-1,-1),'CENTER'),
-                              ('VALIGN',(0,0),(-1,-1),'TOP'),
-                              ('TOPPADDING',(0,0),(-1,-1),3)]))
+    # Bảng ký tên — đúng theo mẫu gốc Word
+    sig = Table([
+        [
+            Paragraph("<b>NHÂN VIÊN ĐẠI LÝ THUẾ</b>", s9bi),
+            Paragraph(
+                f"..., ngày {now.day:02d} tháng {now.month:02d} năm {now.year}<br/><br/>"
+                "<b>NGƯỜI NỘP THUẾ hoặc<br/>ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ</b>",
+                s9bi),
+        ],
+        [
+            Paragraph("Họ và tên:", s9),
+            Paragraph("", s9),
+        ],
+        [
+            Paragraph("Chứng chỉ hành nghề số:", s9),
+            Paragraph("(Chữ ký, ghi rõ họ tên; chức vụ và đóng dấu (nếu có)/ Ký điện tử)", s8),
+        ],
+    ], colWidths=[257, 258])
+    sig.setStyle(TableStyle([
+        ('ALIGN',         (0,0),(-1,-1), 'CENTER'),
+        ('VALIGN',        (0,0),(-1,-1), 'TOP'),
+        ('TOPPADDING',    (0,0),(-1,-1), 4),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 4),
+    ]))
     elements.append(sig)
 
     # ── 7. PHỤ LỤC — A4 ngang (Landscape) ──────────────────────────

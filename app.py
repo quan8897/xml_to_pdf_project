@@ -223,7 +223,8 @@ else:
 # --- FOOTER ---
 st.divider()
 st.markdown("""
-<div style="text-align: center; color: #888; font-size: 0.9em; padding: 20px;">
-    Mẫn Nhi mập ❤️ | <a href="https://github.com/quan8897" target="_blank" style="color: #4A90E2; text-decoration: none;">Phát triển bởi Quan8897</a>
+<div class="footer">
+    © 2024 Tax XML Solutions | Liên hệ: <b>quan98wptu@gmail.com</b> | 
+    <a href="https://github.com/quan8897" target="_blank" style="color: #2a5298; text-decoration: none; font-weight: 600;">Phát triển bởi Quan8897</a>
 </div>
 """, unsafe_allow_html=True)

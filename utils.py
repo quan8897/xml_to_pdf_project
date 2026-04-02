@@ -6,10 +6,9 @@ import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.units import mm
 
 # ─────────────────────────────────────────────
 # HELPERS
@@ -28,7 +27,6 @@ def pre_process_xml(xml_content):
     return xml_str.encode('utf-8')
 
 def fmt_num(value):
-    """Format số có dấu chấm hàng nghìn. Trả về chuỗi rỗng nếu None/rỗng."""
     if value is None: return ""
     s = str(value).strip()
     if not s: return ""
@@ -41,7 +39,6 @@ def fmt_num(value):
         return s
 
 def get(root, *tags):
-    """Lấy text của thẻ đầu tiên tìm thấy trong cây XML."""
     for tag in tags:
         for elem in root.iter():
             if strip_ns(elem.tag) == tag:
@@ -49,17 +46,23 @@ def get(root, *tags):
                 return t.strip() if t and t.strip() else ""
     return ""
 
+def get_all(root, tag):
+    """Lấy tất cả elements có tên tag."""
+    return [e for e in root.iter() if strip_ns(e.tag) == tag]
+
+def chk(val):
+    """Chuyển true/false thành [X] hay [ ]."""
+    if val and val.lower() == 'true':
+        return "X"
+    return " "
+
 def register_fonts():
     paths = [
-        # Times New Roman (Windows) - ưu tiên số 1
         (r"C:\Windows\Fonts\times.ttf",   r"C:\Windows\Fonts\timesbd.ttf"),
-        # Liberation Serif = Times New Roman tương đương (Linux/Streamlit Cloud)
         ("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
          "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf"),
-        # DejaVu Serif fallback (Linux)
         ("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
          "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"),
-        # Arial fallback nếu không có Serif nào
         (r"C:\Windows\Fonts\arial.ttf",   r"C:\Windows\Fonts\arialbd.ttf"),
         ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
          "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"),
@@ -78,41 +81,49 @@ def register_fonts():
 # TEMPLATE 01/TTS  (maTKhai = 470)
 # ─────────────────────────────────────────────
 def render_01TTS(root, elements, fn, fb):
-    """Render form Mẫu 01/TTS – Tờ khai cho thuê tài sản (TT40/2021)."""
 
-    N  = lambda t, **kw: ParagraphStyle(t, fontName=fn, **kw)
-    B  = lambda t, **kw: ParagraphStyle(t, fontName=fb, **kw)
+    def sty(name, **kw):
+        return ParagraphStyle(name, fontName=fn, **kw)
+    def styB(name, **kw):
+        return ParagraphStyle(name, fontName=fb, **kw)
 
-    sN   = N('n',  fontSize=9,  leading=13)
-    sNc  = N('nc', fontSize=9,  leading=13, alignment=1)
-    sB   = B('b',  fontSize=9,  leading=13)
-    sBc  = B('bc', fontSize=10, leading=14, alignment=1)
-    sT   = B('t',  fontSize=13, leading=18, alignment=1)
-    sMo  = B('mo', fontSize=10, leading=14, alignment=1)
-    sSub = N('su', fontSize=9,  leading=13, alignment=1)
-    sSm  = N('sm', fontSize=8,  leading=11)
-    sBsm = B('bsm',fontSize=8,  leading=11)
-    sR   = N('r',  fontSize=9,  leading=13, alignment=2)
+    sN  = sty('n',  fontSize=9,  leading=13)
+    sNc = sty('nc', fontSize=9,  leading=13, alignment=1)
+    sNr = sty('nr', fontSize=9,  leading=13, alignment=2)
+    sB  = styB('b', fontSize=9,  leading=13)
+    sBc = styB('bc',fontSize=9,  leading=13, alignment=1)
+    sT  = styB('t', fontSize=13, leading=18, alignment=1)
+    sMo = styB('mo',fontSize=10, leading=14, alignment=1)
+    sSm = sty('sm', fontSize=8,  leading=11)
+    sBsm= styB('bsm',fontSize=8, leading=11)
+    sBsmc=styB('bsmc',fontSize=8,leading=11, alignment=1)
+    sSmr= sty('smr',fontSize=8,  leading=11, alignment=2)
 
-    W = 515  # usable width (A4 minus margins)
+    W = 515
 
-    # -- đọc dữ liệu -------------------------------------------------
-    tenTKhai   = get(root, 'tenTKhai')
-    mauSo      = "Mẫu số: 01/TTS"
-    loai       = get(root, 'loaiTKhai')      # C = lần đầu, B = bổ sung
-    soLan      = get(root, 'soLan')
-    kyTuNgay   = get(root, 'kyKKhaiTuNgay')
-    kyDenNgay  = get(root, 'kyKKhaiDenNgay')
-    ngayLap    = get(root, 'ngayLapTKhai')
-    tenCQT     = get(root, 'tenCQTNoiNop')
-    mst        = get(root, 'mst')
-    tenNNT     = get(root, 'tenNNT')
-    dchi       = get(root, 'dchiNNT')
-    dthoai     = get(root, 'dthoaiNNT')
-    fax        = get(root, 'faxNNT')
-    email      = get(root, 'emailNNT')
+    # ── ĐỌC DỮ LIỆU ──────────────────────────────────────────────────
+    tenTKhai  = get(root, 'tenTKhai')
+    loai      = get(root, 'loaiTKhai')
+    soLan     = get(root, 'soLan')
+    kyTuNgay  = get(root, 'kyKKhaiTuNgay')
+    kyDenNgay = get(root, 'kyKKhaiDenNgay')
+    ngayLap   = get(root, 'ngayLapTKhai')
+    mst       = get(root, 'mst')
+    tenNNT    = get(root, 'tenNNT')
+    dchi      = get(root, 'dchiNNT')
+    dthoai    = get(root, 'dthoaiNNT')
+    fax       = get(root, 'faxNNT')
+    email     = get(root, 'emailNNT')
 
-    # chỉ tiêu tính thuế
+    # Header fields
+    theoPL_DS  = get(root, 'khaiTheoPLuatDanSu')
+    theoPL_Thue= get(root, 'khaiTheoPLuatThue')
+    ct10       = get(root, 'ct10')
+    ct11       = get(root, 'ct11')
+    ct12k      = get(root, 'ct12k')
+    maHDong    = get(root, 'maHDong')
+
+    # CaNhanKeKhai (chỉ tiêu tính thuế)
     ct23 = fmt_num(get(root, 'ct23'))
     ct24 = fmt_num(get(root, 'ct24'))
     ct25 = fmt_num(get(root, 'ct25'))
@@ -122,167 +133,295 @@ def render_01TTS(root, elements, fn, fb):
     ct29 = fmt_num(get(root, 'ct29'))
 
     # ── 1. HEADER ────────────────────────────────────────────────────
-    box_style = [
-        ('GRID',       (0,0), (-1,-1), 0.5, colors.black),
-        ('ALIGN',      (0,0), (-1,-1), 'CENTER'),
-        ('VALIGN',     (0,0), (-1,-1), 'MIDDLE'),
-        ('LEFTPADDING',(0,0), (-1,-1), 4),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
+    box_st = [
+        ('GRID',   (0,0),(-1,-1), 0.5, colors.black),
+        ('ALIGN',  (0,0),(-1,-1), 'CENTER'),
+        ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+        ('LEFTPADDING',(0,0),(-1,-1), 4),
+        ('TOPPADDING', (0,0),(-1,-1), 4),
+        ('RIGHTPADDING',(0,0),(-1,-1), 4),
+        ('BOTTOMPADDING',(0,0),(-1,-1), 4),
     ]
-    hdr = Table([
-        [
-            Paragraph("<b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br/>Độc lập – Tự do – Hạnh phúc<br/>─────────────────", sMo),
-            Table([
-                [Paragraph(f"<b>{mauSo}</b>", sBc)],
-                [Paragraph(f"(Ban hành kèm theo Thông tư số<br/>40/2021/TT-BTC ngày 01/06/2021<br/>của Bộ trưởng Bộ Tài chính)", sSm)],
-            ], colWidths=[165], style=box_style)
-        ]
-    ], colWidths=[350, 165])
+    hdr = Table([[
+        Paragraph("<b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br/>Độc lập – Tự do – Hạnh phúc<br/>─────────────────────", sMo),
+        Table([[
+            Paragraph("<b>Mẫu số: 01/TTS</b>", sBc)
+        ],[
+            Paragraph("(Ban hành kèm theo Thông tư số 40/2021/TT-BTC<br/>ngày 01/06/2021 của Bộ trưởng Bộ Tài chính)", sSm)
+        ]], colWidths=[165], style=box_st)
+    ]], colWidths=[350, 165])
     hdr.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP')]))
     elements.append(hdr)
     elements.append(Spacer(1, 6))
 
     # ── 2. TIÊU ĐỀ ──────────────────────────────────────────────────
-    elements.append(Paragraph(tenTKhai.upper() if tenTKhai else "TỜ KHAI ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN", sT))
-    elements.append(Paragraph("(Áp dụng đối với cá nhân có hoạt động cho thuê tài sản trực tiếp khai thuế với cơ quan thuế trừ cá nhân trực tiếp ký hợp đồng thuê với tổ chức kinh tế; thay cho cá nhân)", sSub))
-    elements.append(Spacer(1, 5))
+    elements.append(Paragraph(tenTKhai.upper() or "TỜ KHAI ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN", sT))
+    elements.append(Paragraph(
+        "(Áp dụng đối với cá nhân có hoạt động cho thuê tài sản trực tiếp khai thuế với cơ quan thuế "
+        "trừ cá nhân trực tiếp ký hợp đồng thuê với tổ chức kinh tế; thay cho cá nhân)", sSm))
+    elements.append(Spacer(1, 4))
 
-    # Loại tờ khai check-boxes
+    # Loại khai
+    is_ds  = chk(theoPL_DS)
+    is_thue= chk(theoPL_Thue)
     is_dau = "X" if loai == "C" else " "
     is_bs  = "X" if loai == "B" else " "
-    elements.append(Paragraph(
-        f"Cá nhân cho thuê tài sản trực tiếp khai thuế: Tổ chức, cá nhân khai thuế thay, nộp thuế thay cho cá nhân ký "
-        f"quyền theo quy định của pháp luật dân sự(*):", sN))
-    elements.append(Paragraph(
-        f"Doanh nghiệp, tổ chức có tư cách pháp nhân khai thuế thay, nộp thuế thay cho cá nhân:", sN))
-    elements.append(Spacer(1, 3))
 
-    # kỳ khai
+    elements.append(Paragraph(
+        f"Cá nhân cho thuê tài sản trực tiếp khai thuế: Tổ chức, cá nhân khai thuế thay, nộp thuế thay "
+        f"cho cá nhân ký quyền theo quy định của pháp luật dân sự(*): [<b>{is_ds}</b>]", sN))
+    elements.append(Paragraph(
+        f"Doanh nghiệp, tổ chức có tư cách pháp nhân khai thuế thay, nộp thuế thay cho cá nhân: [<b>{is_thue}</b>]", sN))
+    elements.append(Spacer(1, 3))
     elements.append(Paragraph(
         f"[<b>{is_dau}</b>] Kỳ tính thuế: Từ ngày: <b>{kyTuNgay}</b>   Đến ngày: <b>{kyDenNgay}</b>", sN))
     elements.append(Paragraph(
-        f"[<b>{is_bs}</b>] Lần đầu:  [<b>{'X' if soLan=='0' else ' '}</b>] Bổ sung lần thứ [<b>{soLan if soLan!='0' else ''}</b>]", sN))
+        f"[<b>{is_bs}</b>] Lần đầu:   [<b>{'X' if soLan=='0' else ' '}</b>] Bổ sung lần thứ [<b>{soLan if soLan!='0' else ''}</b>]", sN))
     elements.append(Spacer(1, 6))
 
-    # ── 3. THÔNG TIN CÁ NHÂN ────────────────────────────────────────
-    def field(code, label, value, bold_val=True):
-        val_para = Paragraph(f"<b>{value}</b>" if bold_val else value, sN)
-        return [Paragraph(f"[{code}] {label}", sN), val_para]
-
+    # ── 3. THÔNG TIN NGƯỜI NỘP THUẾ ─────────────────────────────────
     info_rows = [
-        field("04", "Tên người nộp thuế:", tenNNT),
-        field("05", "Mã số thuế:", mst),
-        field("06", "Địa chỉ:", dchi),
-        field("07", "Điện thoại:", dthoai),
-        ["", Paragraph(f"[08] Fax: <b>{fax}</b>   [09] Email: <b>{email}</b>", sN)],
+        [Paragraph("[04] Tên người nộp thuế:", sN), Paragraph(f"<b>{tenNNT}</b>", sN)],
+        [Paragraph("[05] Mã số thuế:", sN),          Paragraph(f"<b>{mst}</b>", sN)],
+        [Paragraph("[06] Địa chỉ:", sN),             Paragraph(f"<b>{dchi}</b>", sN)],
+        [Paragraph("[07] Điện thoại:", sN),           Paragraph(f"<b>{dthoai}</b>   [08] Fax: <b>{fax}</b>   [09] Email: <b>{email}</b>", sN)],
     ]
     t_info = Table(info_rows, colWidths=[160, 355])
     t_info.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('VALIGN',(0,0),(-1,-1),'TOP'),
+        ('TOPPADDING',(0,0),(-1,-1),2),
+        ('BOTTOMPADDING',(0,0),(-1,-1),2),
     ]))
     elements.append(t_info)
+    elements.append(Spacer(1, 6))
+
+    # ── 4. THÔNG TIN MỞ RỘNG [10]→[12k] ──────────────────────────
+    def get_sub(tag_parent, tag_child):
+        for p in root.iter():
+            if strip_ns(p.tag) == tag_parent:
+                for c in p:
+                    if strip_ns(c.tag) == tag_child:
+                        return (c.text or "").strip()
+        return ""
+
+    ext_rows = [
+        [Paragraph("[10] Số CMND (trường hợp cá nhân khai thuế tự đăng ký):", sN),
+         Paragraph(f"<b>{ct10}</b>", sN)],
+        [Paragraph("[11] Số CMND (trường hợp cá nhân chưa đăng ký theo kỳ trước):", sN),
+         Paragraph(f"<b>{ct11}</b>", sN)],
+    ]
+
+    # CNKDChuaDangKyThue [12a - 12c]
+    ct12c_so = get_sub('CNKDChuaDangKyThue', 'ct12c_soCMND_CCCD')
+    ct12c_ten= get_sub('CNKDChuaDangKyThue', 'ct12c_ten')
+    if ct12c_so or ct12c_ten:
+        ext_rows.append([
+            Paragraph("[12c] Số CMND/CCCD (cá nhân KD chưa đăng ký thuế):", sN),
+            Paragraph(f"<b>{ct12c_so}</b>   Tên: <b>{ct12c_ten}</b>", sN)])
+
+    # CNKDKhongCoCMND_CCCD [12d - 12f]
+    ct12d_so = get_sub('CNKDKhongCoCMND_CCCD', 'ct12d_soHoChieu')
+    ct12d_ten= get_sub('CNKDKhongCoCMND_CCCD', 'ct12d_ten')
+    if ct12d_so or ct12d_ten:
+        ext_rows.append([
+            Paragraph("[12d] Số hộ chiếu (CNKD không có CMND/CCCD):", sN),
+            Paragraph(f"<b>{ct12d_so}</b>   Tên: <b>{ct12d_ten}</b>", sN)])
+
+    # CT12g - địa chỉ bất động sản
+    ct12g_soNha  = get_sub('CT12g', 'ct12g_soNha')
+    ct12g_phuong = get_sub('CT12g', 'ct12g_tenPhuong')
+    ct12g_quan   = get_sub('CT12g', 'ct12g_tenQuan')
+    ct12g_tinh   = get_sub('CT12g', 'ct12g_tenTinh')
+    if any([ct12g_soNha, ct12g_phuong, ct12g_quan, ct12g_tinh]):
+        dia_chi_g = ", ".join(filter(None, [ct12g_soNha, ct12g_phuong, ct12g_quan, ct12g_tinh]))
+        ext_rows.append([
+            Paragraph("[12g] Địa chỉ bất động sản (nơi cho thuê):", sN),
+            Paragraph(f"<b>{dia_chi_g}</b>", sN)])
+
+    # CT12h - địa chỉ đăng ký kinh doanh
+    ct12h_soNha  = get_sub('CT12h', 'ct12h_soNha')
+    ct12h_phuong = get_sub('CT12h', 'ct12h_tenPhuong')
+    ct12h_quan   = get_sub('CT12h', 'ct12h_tenQuan')
+    ct12h_tinh   = get_sub('CT12h', 'ct12h_tenTinh')
+    if any([ct12h_soNha, ct12h_phuong, ct12h_quan, ct12h_tinh]):
+        dia_chi_h = ", ".join(filter(None, [ct12h_soNha, ct12h_phuong, ct12h_quan, ct12h_tinh]))
+        ext_rows.append([
+            Paragraph("[12h] Địa chỉ đăng ký kinh doanh:", sN),
+            Paragraph(f"<b>{dia_chi_h}</b>", sN)])
+
+    # CT12i - giấy tờ khác
+    ct12i_so  = get_sub('CT12i', 'ct12i_soGiayTo')
+    ct12i_cqc = get_sub('CT12i', 'ct12i_coQuanCap')
+    if ct12i_so:
+        ext_rows.append([
+            Paragraph("[12i] Số giấy tờ khác:", sN),
+            Paragraph(f"<b>{ct12i_so}</b>   Cơ quan cấp: <b>{ct12i_cqc}</b>", sN)])
+
+    ext_rows.append([
+        Paragraph("[12k] Số hợp đồng thuê:", sN),
+        Paragraph(f"<b>{ct12k}</b>", sN)])
+
+    ext_rows.append([
+        Paragraph("[22] Mã hợp đồng:", sN),
+        Paragraph(f"<b>{maHDong}</b>", sN)])
+
+    t_ext = Table(ext_rows, colWidths=[220, 295])
+    t_ext.setStyle(TableStyle([
+        ('VALIGN',(0,0),(-1,-1),'TOP'),
+        ('TOPPADDING',(0,0),(-1,-1),2),
+        ('BOTTOMPADDING',(0,0),(-1,-1),2),
+    ]))
+    elements.append(t_ext)
     elements.append(Spacer(1, 8))
 
-    # ── 4. PHẦN A: BẢNG SỐ LIỆU ─────────────────────────────────────
+    # ── 5. PHẦN A: BẢNG SỐ LIỆU ─────────────────────────────────────
     elements.append(Paragraph("<b>A. PHẦN CÁ NHÂN KÊ KHAI NGHĨA VỤ THUẾ</b>", sB))
-    elements.append(Spacer(1, 4))
+    elements.append(Spacer(1, 3))
 
-    unit_row = [["", "", "", Paragraph("Đơn vị tính: Đồng Việt Nam", sSm)]]
-    t_unit = Table(unit_row, colWidths=[30, 270, 100, 115])
-    t_unit.setStyle(TableStyle([('ALIGN',(3,0),(3,0),'RIGHT')]))
-    elements.append(t_unit)
+    unit_t = Table([[Paragraph("Đơn vị tính: Đồng Việt Nam", sSm)]], colWidths=[W])
+    unit_t.setStyle(TableStyle([('ALIGN',(0,0),(0,0),'RIGHT')]))
+    elements.append(unit_t)
 
-    tax_header = [
-        Paragraph("<b>STT</b>", sBsm),
-        Paragraph("<b>Chỉ tiêu</b>", sBsm),
-        Paragraph("<b>Mã chỉ tiêu</b>", sBsm),
-        Paragraph("<b>Số tiền</b>", sBsm),
+    col_w = [30, 295, 80, 110]
+    tax_hdr = [
+        Paragraph("<b>STT</b>", sBsmc),
+        Paragraph("<b>Chỉ tiêu</b>", sBsmc),
+        Paragraph("<b>Mã chỉ tiêu</b>", sBsmc),
+        Paragraph("<b>Số tiền</b>", sBsmc),
     ]
-    tax_data = [
-        ["1", "Tổng doanh thu phát sinh trong kỳ",               "[23]", ct23],
-        ["2", "Tổng doanh thu tính thuế",                        "[24]", ct24],
-        ["3", "Tổng số thuế GTGT phải nộp",                     "[25]", ct25],
-        ["4", "Tổng số phát sinh trong kỳ",                     "[26]", ct26],
-        ["5", "Tiền phạt, bồi thường mua bởi cho thuê nhận được theo thỏa thuận tại hợp đồng (nếu có)", "[27]", ct27],
-        ["6", "Tổng số thuế TNCN phải nộp tính nhằm bồi thường, phạt vi phạm hợp đồng (nếu có)",       "[28]", ct28],
+    tax_body = [
+        ["1", "Tổng doanh thu phát sinh trong kỳ",    "[23]", ct23 or "0"],
+        ["2", "Tổng doanh thu tính thuế",              "[24]", ct24 or "0"],
+        ["3", "Tổng số thuế GTGT phải nộp",            "[25]", ct25 or "0"],
+        ["4", "Tổng số phát sinh trong kỳ",            "[26]", ct26 or "0"],
+        ["5", "Tiền phạt, bồi thường mua bởi cho thuê nhận được theo thỏa thuận tại hợp đồng (nếu có)", "[27]", ct27 or "0"],
+        ["6", "Tổng số thuế TNCN phải nộp tính nhằm bồi thường, phạt vi phạm hợp đồng (nếu có)",       "[28]", ct28 or "0"],
     ]
-
-    rows = [tax_header] + [
-        [Paragraph(str(r[0]), sNc),
+    rows = [tax_hdr] + [
+        [Paragraph(r[0], sNc),
          Paragraph(r[1], sSm),
          Paragraph(r[2], sNc),
-         Paragraph(fmt_num(r[3]) if r[3] else "0", sR)]
-        for r in tax_data
+         Paragraph(fmt_num(r[3]), sSmr)]
+        for r in tax_body
     ]
-
-    col_w = [30, 270, 100, 115]
     t_tax = Table(rows, colWidths=col_w, repeatRows=1)
     t_tax.setStyle(TableStyle([
-        ('GRID',        (0,0), (-1,-1), 0.5, colors.black),
-        ('BACKGROUND',  (0,0), (-1,0),  colors.lightgrey),
-        ('ALIGN',       (0,0), (0,-1),  'CENTER'),
-        ('ALIGN',       (2,0), (2,-1),  'CENTER'),
-        ('ALIGN',       (3,0), (3,-1),  'RIGHT'),
-        ('VALIGN',      (0,0), (-1,-1), 'MIDDLE'),
-        ('TOPPADDING',  (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING',(0,0),(-1,-1), 4),
-        ('LEFTPADDING', (0,0), (-1,-1), 4),
+        ('GRID',        (0,0),(-1,-1), 0.5, colors.black),
+        ('BACKGROUND',  (0,0),(-1,0),  colors.lightgrey),
+        ('VALIGN',      (0,0),(-1,-1), 'MIDDLE'),
+        ('ALIGN',       (0,0),(0,-1),  'CENTER'),
+        ('ALIGN',       (2,0),(2,-1),  'CENTER'),
+        ('ALIGN',       (3,0),(3,-1),  'RIGHT'),
+        ('TOPPADDING',  (0,0),(-1,-1), 4),
+        ('BOTTOMPADDING',(0,0),(-1,-1),4),
+        ('LEFTPADDING', (0,0),(-1,-1), 4),
+        ('RIGHTPADDING',(0,0),(-1,-1), 4),
     ]))
     elements.append(t_tax)
 
-    # Dòng tổng thuế TNCN
-    elements.append(Spacer(1, 4))
-    total_row = [[
+    # Dòng tổng [29]
+    elements.append(Spacer(1, 2))
+    t_total = Table([[
         Paragraph("7", sNc),
-        Paragraph("Tổng số thuế TNCN phải nộp [29]+[26]+[28]", sSm),
+        Paragraph("Tổng số thuế TNCN phải nộp [29]=[26]+[28]", sSm),
         Paragraph("[29]", sNc),
-        Paragraph(ct29 if ct29 else "0", sBsm)
-    ]]
-    t_total = Table(total_row, colWidths=col_w)
+        Paragraph(f"<b>{ct29 or '0'}</b>", sSmr)
+    ]], colWidths=col_w)
     t_total.setStyle(TableStyle([
-        ('GRID',   (0,0),(-1,-1), 0.5, colors.black),
-        ('ALIGN',  (0,0),(0,-1),  'CENTER'),
-        ('ALIGN',  (2,0),(2,-1),  'CENTER'),
-        ('ALIGN',  (3,0),(3,-1),  'RIGHT'),
-        ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
+        ('GRID',  (0,0),(-1,-1), 0.5, colors.black),
+        ('ALIGN', (0,0),(0,-1),  'CENTER'),
+        ('ALIGN', (2,0),(2,-1),  'CENTER'),
+        ('ALIGN', (3,0),(3,-1),  'RIGHT'),
+        ('VALIGN',(0,0),(-1,-1), 'MIDDLE'),
         ('TOPPADDING',(0,0),(-1,-1), 4),
-        ('BOTTOMPADDING',(0,0),(-1,-1), 4),
+        ('BOTTOMPADDING',(0,0),(-1,-1),4),
+        ('LEFTPADDING',(0,0),(-1,-1), 4),
     ]))
     elements.append(t_total)
     elements.append(Spacer(1, 4))
-    elements.append(Paragraph(
-        "<i>(TNCN: Thu nhập cá nhân; GTGT: Giá trị gia tăng)</i>", sSm))
+    elements.append(Paragraph("<i>(TNCN: Thu nhập cá nhân; GTGT: Giá trị gia tăng)</i>", sSm))
 
-    # ── 5. CAM KẾT ──────────────────────────────────────────────────
-    elements.append(Spacer(1, 10))
+    # ── 6. CAM KẾT + KÝ TÊN ─────────────────────────────────────────
+    elements.append(Spacer(1, 8))
     elements.append(Paragraph(
         "Tôi cam đoan số liệu khai trên là đúng và chịu trách nhiệm trước pháp luật về số liệu đã khai...", sN))
-
-    # ── 6. CHỮ KÝ ────────────────────────────────────────────────────
-    elements.append(Spacer(1, 15))
+    elements.append(Spacer(1, 8))
     now = datetime.datetime.now()
     elements.append(Paragraph(
-        f"Ngày {now.day:02d} tháng {now.month:02d} năm {now.year}", sR))
+        f"Ngày {now.day:02d} tháng {now.month:02d} năm {now.year}", sNr))
     elements.append(Spacer(1, 5))
-
-    sig = Table([
-        [Paragraph("<b>NHÂN VIÊN ĐẠI LÝ THUẾ</b>", sBc),
-         Paragraph("<b>NGƯỜI NỘP THUẾ hoặc<br/>ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ</b>", sBc)],
-        [Paragraph("Họ và tên:", sN),
-         Paragraph("(Ký, ghi rõ họ tên, đóng dấu (nếu có))", sSm)],
-        [Paragraph("Chứng chỉ hành nghề số:", sN), ""],
-    ], colWidths=[257, 258])
+    sig = Table([[
+        Paragraph("<b>NHÂN VIÊN ĐẠI LÝ THUẾ</b>", sBc),
+        Paragraph("<b>NGƯỜI NỘP THUẾ hoặc<br/>ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ</b>", sBc)
+    ],[
+        Paragraph("Họ và tên:", sN),
+        Paragraph("(Ký, ghi rõ họ tên, đóng dấu (nếu có))", sSm)
+    ],[
+        Paragraph("Chứng chỉ hành nghề số:", sN), ""
+    ]], colWidths=[257, 258])
     sig.setStyle(TableStyle([
-        ('ALIGN', (0,0),(-1,-1),'CENTER'),
+        ('ALIGN',(0,0),(-1,-1),'CENTER'),
         ('VALIGN',(0,0),(-1,-1),'TOP'),
         ('TOPPADDING',(0,0),(-1,-1),3),
     ]))
     elements.append(sig)
 
+    # ── 7. PHỤ LỤC 01/BK-TTS (Trang 2+) ──────────────────────────
+    hop_dong_list = get_all(root, 'CTietBKeHDongTTS')
+    if hop_dong_list:
+        elements.append(PageBreak())
+        elements.append(Paragraph("<b>PHỤ LỤC BẢNG KÊ CHI TIẾT HỢP ĐỒNG CHO THUÊ TÀI SẢN</b>", sBc))
+        elements.append(Paragraph("(Kèm theo tờ khai 01/TTS)", sNc))
+        elements.append(Spacer(1, 8))
+
+        pluc_col_w = [25,40,50,130,70,45,45,50,50,55]
+        pluc_hdr = [
+            Paragraph("<b>STT</b>", sBsmc),
+            Paragraph("<b>Loại hợp đồng</b>", sBsmc),
+            Paragraph("<b>Bên thuê<br/>(MST)</b>", sBsmc),
+            Paragraph("<b>Tên bên thuê</b>", sBsmc),
+            Paragraph("<b>Số hợp đồng</b>", sBsmc),
+            Paragraph("<b>Ngày bắt đầu</b>", sBsmc),
+            Paragraph("<b>Ngày kết thúc</b>", sBsmc),
+            Paragraph("<b>Giá thuê/tháng</b>", sBsmc),
+            Paragraph("<b>Doanh thu tính thuế</b>", sBsmc),
+            Paragraph("<b>Thuế TNCN phải nộp</b>", sBsmc),
+        ]
+
+        pluc_data = [pluc_hdr]
+        for hd in hop_dong_list:
+            def gv(t):
+                for c in hd:
+                    if strip_ns(c.tag) == t:
+                        return (c.text or "").strip()
+                return ""
+            pluc_data.append([
+                Paragraph(gv('ct06')         or "", sSm),
+                Paragraph(gv('ct06a_ten')    or "", sSm),
+                Paragraph(gv('ct08')         or "", sSm),
+                Paragraph(gv('ct07')         or "", sSm),
+                Paragraph(gv('ct11')         or "", sSm),
+                Paragraph(gv('ct17')         or "", sSm),
+                Paragraph(gv('ct18')         or "", sSm),
+                Paragraph(fmt_num(gv('ct19')) or "0", sSm),
+                Paragraph(fmt_num(gv('ct24')) or "0", sSm),
+                Paragraph(fmt_num(gv('ct26')) or "0", sSm),
+            ])
+
+        t_pluc = Table(pluc_data, colWidths=pluc_col_w, repeatRows=1)
+        t_pluc.setStyle(TableStyle([
+            ('GRID',       (0,0),(-1,-1), 0.5, colors.black),
+            ('BACKGROUND', (0,0),(-1,0),  colors.lightgrey),
+            ('VALIGN',     (0,0),(-1,-1), 'TOP'),
+            ('ALIGN',      (0,0),(0,-1),  'CENTER'),
+            ('TOPPADDING', (0,0),(-1,-1), 3),
+            ('BOTTOMPADDING',(0,0),(-1,-1),3),
+            ('FONTSIZE',   (0,0),(-1,-1), 7),
+        ]))
+        elements.append(t_pluc)
+
 # ─────────────────────────────────────────────
-# GENERIC RENDERER (fallback cho các form khác)
+# GENERIC RENDERER (fallback)
 # ─────────────────────────────────────────────
 def xml_to_dict(element):
     result = {}
@@ -304,7 +443,7 @@ def xml_to_dict(element):
 def render_generic(root, elements, fn, fb):
     sN  = ParagraphStyle('gN',  fontName=fn, fontSize=9,  leading=13)
     sB  = ParagraphStyle('gB',  fontName=fb, fontSize=9,  leading=13)
-    sT  = ParagraphStyle('gT',  fontName=fb, fontSize=14, leading=18, alignment=1)
+    sT  = ParagraphStyle('gT',  fontName=fb, fontSize=13, leading=18, alignment=1)
     sMo = ParagraphStyle('gMo', fontName=fb, fontSize=10, leading=14, alignment=1)
 
     elements.append(Paragraph("<b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b>", sMo))
@@ -314,7 +453,6 @@ def render_generic(root, elements, fn, fb):
     elements.append(Spacer(1, 10))
 
     data = xml_to_dict(root)
-
     info_data, complex_data = {}, []
     def split(d):
         for k, v in d.items():
@@ -354,8 +492,7 @@ def render_generic(root, elements, fn, fb):
 def extract_tax_metadata(xml_content):
     try:
         root = ET.fromstring(pre_process_xml(xml_content))
-        mst, ten_tk, ma_tk = "Unknown", "TỜ KHAI THUẾ", ""
-        ky = "Unknown"
+        mst, ten_tk, ma_tk, ky = "Unknown", "TỜ KHAI THUẾ", "", "Unknown"
         for elem in root.iter():
             t = strip_ns(elem.tag)
             if t == 'mst' and elem.text: mst = elem.text.strip()
@@ -370,25 +507,19 @@ def generate_tax_pdf(xml_content, title="BÁO CÁO THUẾ"):
     clean = pre_process_xml(xml_content)
     root  = ET.fromstring(clean)
     meta  = extract_tax_metadata(xml_content)
-
-    # Xác định form type
     ma_tk = meta.get("form", "")
 
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer, pagesize=A4,
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
         rightMargin=40, leftMargin=40,
-        topMargin=30,   bottomMargin=30
-    )
+        topMargin=30,   bottomMargin=30)
 
     font_ok = register_fonts()
     fn = 'VN'  if font_ok else 'Helvetica'
     fb = 'VNB' if font_ok else 'Helvetica-Bold'
 
     elements = []
-
-    # Dispatch theo loại form
-    if ma_tk == "470":          # Mẫu 01/TTS
+    if ma_tk == "470":
         render_01TTS(root, elements, fn, fb)
     else:
         render_generic(root, elements, fn, fb)

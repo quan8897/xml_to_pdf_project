@@ -53,15 +53,15 @@ if uploaded_files:
         new_pdf_name = f"{today_str}_{orig_name}.pdf"
 
         with st.container(border=True):
-            col_check, col_info, col_btn = st.columns([1, 6, 2])
+            col_check, col_info, col_pdf, col_docx = st.columns([1, 5, 2, 2])
             is_selected = col_check.checkbox("Chọn", value=True, key=f"check_{i}")
             col_info.write(f"📄 **{uploaded_file.name}** ➞ `{new_pdf_name}`")
 
             xml_data = uploaded_file.read()
             try:
                 pdf_buffer = generate_tax_pdf(xml_data, title="HỒ SƠ THUẾ CHI TIẾT")
-                col_btn.download_button(
-                    label="Tải riêng",
+                col_pdf.download_button(
+                    label="📥 PDF",
                     data=pdf_buffer,
                     file_name=new_pdf_name,
                     mime="application/pdf",
@@ -72,6 +72,24 @@ if uploaded_files:
                     selected_files_data.append({"name": new_pdf_name, "content": pdf_buffer.getvalue()})
             except Exception as e:
                 st.error(f"Lỗi file {uploaded_file.name}: {e}")
+
+            # Nút tải DOCX — bản Word đã điền dữ liệu (đẹp hơn khi in)
+            try:
+                docx_buf = generate_tax_docx(xml_data)
+                if docx_buf:
+                    docx_name = new_pdf_name.replace('.pdf', '.docx')
+                    col_docx.download_button(
+                        label="📝 DOCX",
+                        data=docx_buf,
+                        file_name=docx_name,
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        key=f"dl_docx_{i}",
+                        use_container_width=True,
+                        help="Tải file Word đã điền dữ liệu — mở bằng Microsoft Word để in PDF chất lượng cao"
+                    )
+            except Exception:
+                pass
+
 
     # Nút tải ZIP
     if selected_files_data:

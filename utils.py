@@ -248,10 +248,13 @@ def render_01TTS(root, elements, fn, fb):
     ct12k           = get(root, 'ct12k')
     maHDong         = get(root, 'maHDong')
 
-    # Tổ chức nộp thuế thay [16-21]
-    ct16 = get(root, 'ct16'); ct17 = get(root, 'ct17')
-    ct18 = get(root, 'ct18'); ct19 = get(root, 'ct19')
-    ct20 = get(root, 'ct20'); ct21 = get(root, 'ct21')
+    # [16-21] Lấy ĐÚNG từ khối ToChucNopThueThay (không dùng get() chung vì sẽ lấy nhầm từ Phục lục)
+    ct16 = gs('ToChucNopThueThay', 'ct16')
+    ct17 = gs('ToChucNopThueThay', 'ct17')
+    ct18 = gs('ToChucNopThueThay', 'ct18')
+    ct19 = gs('ToChucNopThueThay', 'ct19')
+    ct20 = gs('ToChucNopThueThay', 'ct20')
+    ct21 = gs('ToChucNopThueThay', 'ct21')
 
     dia_chi_g = ", ".join(filter(None, [ct12g_soNha, ct12g_phuong, ct12g_quan, ct12g_tinh]))
     dia_chi_h = ", ".join(filter(None, [ct12h_soNha, ct12h_phuong, ct12h_quan, ct12h_tinh]))
@@ -264,8 +267,14 @@ def render_01TTS(root, elements, fn, fb):
         [Paragraph("[11] Số CMND (kỳ khai trước không có CMND):", sN),
          Paragraph(f"<b>{ct11}</b>", sN)],
 
+        # [12a] và [12b] dùng bảng 2 cột riêng để tão hoàng đàn
         [Paragraph("[12a] Ngày sinh:", sN),
-         Paragraph(f"<b>{ct12a_ngaySinh}</b>    [12b] Quốc tịch: <b>{ct12b_tenQuocTich}</b>", sN)],
+         Table([[
+             Paragraph(f"<b>{ct12a_ngaySinh}</b>", sN),
+             Paragraph("[12b] Quốc tịch:", sN),
+             Paragraph(f"<b>{ct12b_tenQuocTich}</b>", sN),
+         ]], colWidths=[100, 90, 95],
+         style=[('LEFTPADDING',(0,0),(-1,-1),0),('TOPPADDING',(0,0),(-1,-1),0)])],
 
         [Paragraph("[12c] Số CMND/CCCD:", sN),
          Paragraph(f"<b>{ct12c_so}</b>    Tên: <b>{ct12c_ten}</b>    Mã: <b>{ct12c_ma}</b>", sN)],
@@ -353,7 +362,7 @@ def render_01TTS(root, elements, fn, fb):
          Paragraph(fmt_num(r[3]), sSmr)]
         for r in tax_body
     ]
-    t_tax = Table(rows, colWidths=col_w, repeatRows=1)
+    t_tax = Table(rows, colWidths=col_w, repeatRows=1, splitByRow=0)
     t_tax.setStyle(TableStyle([
         ('GRID',        (0,0),(-1,-1), 0.5, colors.black),
         ('BACKGROUND',  (0,0),(-1,0),  colors.lightgrey),
@@ -361,33 +370,32 @@ def render_01TTS(root, elements, fn, fb):
         ('ALIGN',       (0,0),(0,-1),  'CENTER'),
         ('ALIGN',       (2,0),(2,-1),  'CENTER'),
         ('ALIGN',       (3,0),(3,-1),  'RIGHT'),
-        ('TOPPADDING',  (0,0),(-1,-1), 4),
-        ('BOTTOMPADDING',(0,0),(-1,-1),4),
+        ('TOPPADDING',  (0,0),(-1,-1), 3),
+        ('BOTTOMPADDING',(0,0),(-1,-1),3),
         ('LEFTPADDING', (0,0),(-1,-1), 4),
         ('RIGHTPADDING',(0,0),(-1,-1), 4),
     ]))
     elements.append(t_tax)
 
-    # Dòng tổng [29]
-    elements.append(Spacer(1, 2))
+    # Dòng tổng [29] — keep với bảng phía trên
     t_total = Table([[
         Paragraph("7", sNc),
         Paragraph("Tổng số thuế TNCN phải nộp [29]=[26]+[28]", sSm),
         Paragraph("[29]", sNc),
         Paragraph(f"<b>{ct29 or '0'}</b>", sSmr)
-    ]], colWidths=col_w)
+    ]], colWidths=col_w, splitByRow=0)
     t_total.setStyle(TableStyle([
         ('GRID',  (0,0),(-1,-1), 0.5, colors.black),
         ('ALIGN', (0,0),(0,-1),  'CENTER'),
         ('ALIGN', (2,0),(2,-1),  'CENTER'),
         ('ALIGN', (3,0),(3,-1),  'RIGHT'),
         ('VALIGN',(0,0),(-1,-1), 'MIDDLE'),
-        ('TOPPADDING',(0,0),(-1,-1), 4),
-        ('BOTTOMPADDING',(0,0),(-1,-1),4),
+        ('TOPPADDING',(0,0),(-1,-1), 3),
+        ('BOTTOMPADDING',(0,0),(-1,-1),3),
         ('LEFTPADDING',(0,0),(-1,-1), 4),
     ]))
     elements.append(t_total)
-    elements.append(Spacer(1, 4))
+    elements.append(Spacer(1, 3))
     elements.append(Paragraph("<i>(TNCN: Thu nhập cá nhân; GTGT: Giá trị gia tăng)</i>", sSm))
 
     # ── 6. CAM KẾT + KÝ TÊN ─────────────────────────────────────────

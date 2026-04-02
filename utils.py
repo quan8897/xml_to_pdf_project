@@ -14,7 +14,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as pdfcanvas
 
 # ─────────────────────────────────────────────
-# CONSTANTS
+# CONSTANTS & HELPERS
 # ─────────────────────────────────────────────
 XMLNS = 'http://kekhaithue.gdt.gov.vn/TKhaiThue'
 
@@ -34,92 +34,44 @@ def pre_process_xml(xml_content):
 def fmt_num(value):
     if value is None: return ""
     s = str(value).strip()
-    if not s or s.lower() == 'none': return ""
+    if not s or s.lower() in ('none','false','true'): return ""
     try:
         f = float(s.replace(',', '.'))
-        if f == int(f):
-            return "{:,}".format(int(f)).replace(',', '.')
+        if f == int(f): return "{:,}".format(int(f)).replace(',', '.')
         return "{:,.2f}".format(f).replace(',', '.')
-    except:
-        return s
+    except: return s
 
-def fnd(root, *path_parts):
-    ns_path = '/'.join(f'{{{XMLNS}}}{p}' for p in path_parts)
-    elem = root.find(f'.//{ns_path}')
-    if elem is not None:
-        t = elem.text
-        return t.strip() if t and t.strip() else ""
-    fallback = path_parts[-1]
+def fnd(root, *parts):
+    ns_path = '/'.join(f'{{{XMLNS}}}{p}' for p in parts)
+    e = root.find(f'.//{ns_path}')
+    if e is not None: return (e.text or "").strip()
+    fallback = parts[-1]
     for e in root.iter():
-        if strip_ns(e.tag) == fallback:
-            t = e.text
-            if t and t.strip(): return t.strip()
+        if strip_ns(e.tag) == fallback: return (e.text or "").strip()
     return ""
 
-def fnd_parent(root, parent_tag, child_tag):
+def fnd_p(root, p_tag, c_tag):
     for p in root.iter():
-        if strip_ns(p.tag) == parent_tag:
+        if strip_ns(p.tag) == p_tag:
             for c in p:
-                if strip_ns(c.tag) == child_tag:
-                    t = c.text
-                    return t.strip() if t and t.strip() else ""
+                if strip_ns(c.tag) == c_tag: return (c.text or "").strip()
     return ""
-
-def get_all(root, tag):
-    return [e for e in root.iter() if strip_ns(e.tag) == tag]
 
 def register_fonts():
-    paths = [
-        (r"C:\Windows\Fonts\times.ttf",   r"C:\Windows\Fonts\timesbd.ttf", r"C:\Windows\Fonts\timesi.ttf"),
-        ("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
-         "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",
-         "/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf"),
-    ]
-    for reg, bold, italic in paths:
-        if os.path.exists(reg):
+    paths = [(r"C:\Windows\Fonts\times.ttf", r"C:\Windows\Fonts\timesbd.ttf", r"C:\Windows\Fonts\timesi.ttf"),
+             ("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+              "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",
+              "/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf")]
+    for r, b, i in paths:
+        if os.path.exists(r):
             try:
-                pdfmetrics.registerFont(TTFont('VN', reg))
-                pdfmetrics.registerFont(TTFont('VNB', bold if os.path.exists(bold) else reg))
-                pdfmetrics.registerFont(TTFont('VNI', italic if os.path.exists(italic) else reg))
+                pdfmetrics.registerFont(TTFont('T', r))
+                pdfmetrics.registerFont(TTFont('TB', b if os.path.exists(b) else r))
+                pdfmetrics.registerFont(TTFont('TI', i if os.path.exists(i) else r))
                 return True
             except: continue
     return False
 
-# ── MST BOXES (iTaxViewer 10-3 structure) ───────────────────────────
-def draw_mst_boxes(mst_str, fn):
-    mst = (mst_str or "").replace("-", "").strip()
-    # iTaxViewer uses 10 main boxes and 3 sub boxes
-    chars = list(mst[:13])
-    while len(chars) < 13: chars.append("")
-    
-    # 10 boxes for main MST
-    box_data = [[Paragraph(c, ParagraphStyle('c', fontName=fn, fontSize=10, alignment=1)) for c in chars[:10]]]
-    # Splitter dash
-    box_data[0].append(Paragraph("-", ParagraphStyle('c', fontName=fn, fontSize=10, alignment=1)))
-    # 3 boxes for branch
-    for c in chars[10:13]:
-        box_data[0].append(Paragraph(c, ParagraphStyle('c', fontName=fn, fontSize=10, alignment=1)))
-        
-    widths = [5.5*mm]*10 + [3*mm] + [5.5*mm]*3
-    t = Table(box_data, colWidths=widths, rowHeights=[6.5*mm])
-    # Style only for the character boxes (skip the dash at index 10)
-    grid_style = [
-        ('ALIGN',  (0,0),(-1,-1), 'CENTER'),
-        ('VALIGN', (0,0),(-1,-1), 'MIDDLE'),
-        ('LEFTPADDING',   (0,0),(-1,-1), 0),
-        ('RIGHTPADDING',  (0,0),(-1,-1), 0),
-    ]
-    for i in range(10): 
-        grid_style.append(('GRID', (i,0), (i,0), 0.7, colors.black))
-    for i in range(11, 14):
-        grid_style.append(('GRID', (i,0), (i,0), 0.7, colors.black))
-        
-    t.setStyle(TableStyle(grid_style))
-    return t
-
-# ─────────────────────────────────────────────
-# PAGE NUMBER CANVAS
-# ─────────────────────────────────────────────
 class NumberedCanvas(pdfcanvas.Canvas):
     def __init__(self, *args, **kwargs):
         pdfcanvas.Canvas.__init__(self, *args, **kwargs)
@@ -128,195 +80,175 @@ class NumberedCanvas(pdfcanvas.Canvas):
         self._saved_page_states.append(dict(self.__dict__))
         self._startPage()
     def save(self):
-        num_pages = len(self._saved_page_states)
-        for state in self._saved_page_states:
-            self.__dict__.update(state)
-            self.setFont("VN", 8)
-            self.drawRightString(A4[0] - 40, 20, f"Trang {self._pageNumber}/{num_pages}")
+        n = len(self._saved_page_states)
+        for s in self._saved_page_states:
+            self.__dict__.update(s)
+            self.setFont("T", 8)
+            self.drawRightString(A4[0]-40, 20, f"{self._pageNumber}/{n}")
             pdfcanvas.Canvas.showPage(self)
         pdfcanvas.Canvas.save(self)
 
 # ─────────────────────────────────────────────
-# TEMPLATE 01/TTS
+# RENDERER
 # ─────────────────────────────────────────────
 def render_01TTS(root, elements, fn, fb, fi):
     def N(name, **kw): return ParagraphStyle(name, fontName=fn, **kw)
     def B(name, **kw): return ParagraphStyle(name, fontName=fb, **kw)
     def I(name, **kw): return ParagraphStyle(name, fontName=fi, **kw)
 
-    s7   = N('s7',  fontSize=7,  leading=9)
-    s7c  = N('s7c', fontSize=7,  leading=9,  alignment=1)
-    s8   = N('s8',  fontSize=8,  leading=11)
-    s8r  = N('s8r', fontSize=8,  leading=11, alignment=2)
-    s8c  = N('s8c', fontSize=8,  leading=11, alignment=1)
-    s8bc = B('s8bc',fontSize=8,  leading=11, alignment=1)
-    s9   = N('s9',  fontSize=10, leading=13)
-    s9b  = B('s9b', fontSize=10, leading=13)
-    s9bc = B('s9bc',fontSize=10, leading=13, alignment=1)
-    s9bi = B('s9bi',fontSize=10, leading=13, alignment=1)
-    s12bc = B('s12bc',fontSize=12, leading=16, alignment=1)
+    s7c = N('s7c', fontSize=7, leading=9, alignment=1)
+    s8  = N('s8', fontSize=8, leading=10)
+    s8c = N('s8c', fontSize=8, leading=10, alignment=1)
+    s8r = N('s8r', fontSize=8, leading=10, alignment=2)
+    s8bc = B('s8bc', fontSize=8, leading=10, alignment=1)
+    s9  = N('s9', fontSize=9, leading=11)
+    s9b = B('s9b', fontSize=9, leading=11)
+    s9bc = B('s9bc', fontSize=9, leading=12, alignment=1)
+    s11bc = B('s11bc', fontSize=11, leading=14, alignment=1)
 
-    W = 515
-    def sp(h=3): return Spacer(1, h)
     def clean(v): return '' if not v or str(v).lower() in ('false','true','0','none') else str(v).strip()
+    def sp(h=2): return Spacer(1, h)
 
-    # --- DATA READING ---
-    tenTKhai = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','TKhaiThue','tenTKhai')
-    loai = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','TKhaiThue','loaiTKhai')
-    soLan = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','TKhaiThue','soLan')
-    kyTuNgay = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','TKhaiThue','KyKKhaiThue','kyKKhaiTuNgay')
-    kyDenNgay = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','TKhaiThue','KyKKhaiThue','kyKKhaiDenNgay')
-    mst = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','NNT','mst')
-    tenNNT = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','NNT','tenNNT')
-    dchi = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','NNT','dchiNNT')
-    dthoai = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','NNT','dthoaiNNT')
-    fax = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','NNT','faxNNT')
-    email = fnd(root,'HSoKhaiThue','TTinChung','TTinTKhaiThue','NNT','emailNNT')
-    theoPL_DS = fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','khaiTheoPLuatDanSu')
-    theoPL_Thue = fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','khaiTheoPLuatThue')
-    ct10 = clean(fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','ct10'))
-    ct11 = clean(fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','ct11'))
-    ct12k = fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','ct12k')
-    maHDong = fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','maHDong')
-    tc16 = fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','ToChucNopThueThay','ct16')
-    tc17 = fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','ToChucNopThueThay','ct17')
-    tc18 = fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','ToChucNopThueThay','ct18')
-    tc19 = fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','ToChucNopThueThay','ct19')
-    tc20 = fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','ToChucNopThueThay','ct20')
-    tc21 = fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','Header','ToChucNopThueThay','ct21')
-    ct23 = fmt_num(fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','CaNhanKeKhai','ct23'))
-    ct24 = fmt_num(fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','CaNhanKeKhai','ct24'))
-    ct25 = fmt_num(fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','CaNhanKeKhai','ct25'))
-    ct26 = fmt_num(fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','CaNhanKeKhai','ct26'))
-    ct27 = fmt_num(fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','CaNhanKeKhai','ct27'))
-    ct28 = fmt_num(fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','CaNhanKeKhai','ct28'))
-    ct29 = fmt_num(fnd(root,'HSoKhaiThue','CTieuTKhaiChinh','CaNhanKeKhai','ct29'))
+    # XML DATA
+    tenNNT = fnd(root,'NNT','tenNNT')
+    mst = fnd(root,'NNT','mst')
+    dchi = fnd(root,'NNT','dchiNNT')
+    dthoai = fnd(root,'NNT','dthoaiNNT')
+    fax = fnd(root,'NNT','faxNNT')
+    email = fnd(root,'NNT','emailNNT')
+    kyTu = fnd(root,'TKhaiThue','KyKKhaiThue','kyKKhaiTuNgay')
+    kyDen = fnd(root,'TKhaiThue','KyKKhaiThue','kyKKhaiDenNgay')
+    loai = fnd(root,'TKhaiThue','loaiTKhai')
+    soLan = fnd(root,'TKhaiThue','soLan')
+    
+    ct23 = fmt_num(fnd(root,'CaNhanKeKhai','ct23'))
+    ct24 = fmt_num(fnd(root,'CaNhanKeKhai','ct24'))
+    ct25 = fmt_num(fnd(root,'CaNhanKeKhai','ct25'))
+    ct26 = fmt_num(fnd(root,'CaNhanKeKhai','ct26'))
+    ct27 = fmt_num(fnd(root,'CaNhanKeKhai','ct27'))
+    ct28 = fmt_num(fnd(root,'CaNhanKeKhai','ct28'))
+    ct29 = fmt_num(fnd(root,'CaNhanKeKhai','ct29'))
 
-    # Helper for layout
-    def frow(code, label, val, lw=195, vw=320):
-        t = Table([[Paragraph(f'[{code}] {label}', s9), Paragraph(f'<b>{val}</b>', s9)]], colWidths=[lw, vw])
-        t.setStyle(TableStyle([('LINEBELOW',(1,0),(1,0),0.5,colors.black),('VALIGN',(0,0),(-1,-1),'BOTTOM')]))
-        return t
-
-    # Header 01/TTS
-    hdr = Table([[
-        Paragraph("<b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br/>Độc lập – Tự do – Hạnh phúc<br/>─────────────────────", s9bi),
+    # HEADER
+    h_data = [[
+        Paragraph("<b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br/>Độc lập-Tự do-Hạnh phúc<br/>─────────────────────", s9bc),
         Table([[Paragraph("<b>Mẫu số: 01/TTS</b>", s8bc)],
-               [Paragraph("(Ban hành kèm theo Thông tư số 40/2021/TT-BTC ngày 01/06/2021 của Bộ trưởng Bộ Tài chính)", s7c)]],
-              colWidths=[162], style=[('BOX',(0,0),(-1,-1),0.5,colors.black),('TOPPADDING',(0,0),(-1,-1),3),('LEFTPADDING',(0,0),(-1,-1),3)])
-    ]], colWidths=[353, 162])
-    elements.append(hdr); elements.append(sp(8))
+               [Paragraph("(Ban hành kèm theo Thông tư số 40/2021/TT-BTC ngày 01/6/2021 của Bộ trưởng Bộ Tài Chính)", s7c)]],
+              colWidths=[150], style=[('BOX',(0,0),(-1,-1),0.5,colors.black),('TOPPADDING',(0,0),(-1,-1),2),('LEFTPADDING',(0,0),(-1,-1),2)])
+    ]]
+    elements.append(Table(h_data, colWidths=[365, 150])); elements.append(sp(4))
 
-    elements.append(Paragraph('TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN', s12bc))
+    elements.append(Paragraph('<b>TỜ KHAI ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN(TT40/2021)</b>', s11bc))
     elements.append(Paragraph('(Áp dụng đối với cá nhân có hoạt động cho thuê tài sản trực tiếp khai thuế với cơ quan thuế và tổ chức khai thay cho cá nhân)', s8c))
-    elements.append(sp(6))
+    elements.append(sp(4))
 
-    is_ds = "X" if clean(theoPL_DS) else " "
-    is_thue = "X" if clean(theoPL_Thue) else " "
-    elements.append(Table([[Paragraph(f"[{is_ds}]", s9), Paragraph("Cá nhân cho thuê tài sản trực tiếp khai thuế/Tổ chức, cá nhân khai thuế thay, nộp thuế thay cho cá nhân ủy quyền theo quy định của pháp luật dân sự", s9)]], colWidths=[20, 495]))
-    elements.append(Table([[Paragraph(f"[{is_thue}]", s9), Paragraph("Doanh nghiệp, tổ chức kinh tế khai thuế thay, nộp thuế thay theo pháp luật thuế", s9)]], colWidths=[20, 495]))
-    elements.append(sp(5))
+    is_ds = "[x]" if clean(fnd(root,'Header','khaiTheoPLuatDanSu')) else "[ ]"
+    is_th = "[x]" if clean(fnd(root,'Header','khaiTheoPLuatThue')) else "[ ]"
+    elements.append(Paragraph(f"{is_ds} Cá nhân cho thuê tài sản trực tiếp khai thuế/ Tổ chức, cá nhân khai thuế thay, nộp thuế thay cho cá nhân ủy quyền theo quy định của pháp luật dân sự", s9))
+    elements.append(Paragraph(f"{is_th} Doanh nghiệp, tổ chức kinh tế khai thuế thay, nộp thuế thay theo pháp luật thuế", s9))
+    elements.append(sp(2))
 
-    ky_nam = kyTuNgay.split('/')[-1] if kyTuNgay and '/' in kyTuNgay else ""
-    ky_thang = kyTuNgay.split('/')[1] if kyTuNgay and '/' in kyTuNgay else ""
+    elements.append(Paragraph(f"<b>[01] Kỳ tính thuế:</b> Kỳ thanh toán: Từ ngày: {kyTu or '...'}   Đến ngày: {kyDen or '...'}", s9))
+    elements.append(Paragraph(f"<b>[02] Lần đầu:</b> [{'x' if loai=='C' else ' '}]    <b>[03] Bổ sung lần thứ:</b> [ {soLan if soLan and soLan!='0' else ''} ]", s9))
+    elements.append(sp(3))
+
+    def rowplain(c, l, v): return Paragraph(f"<b>[{c}] {l}</b> {v}", s9)
+
+    elements.append(rowplain('04', 'Tên người nộp thuế:', tenNNT.upper()))
+    elements.append(rowplain('05', 'Mã số thuế:', mst))
+    elements.append(rowplain('06', 'Địa chỉ liên hệ:', dchi))
+    elements.append(Paragraph(f"<b>[07] Điện thoại:</b> {dthoai}   <b>[08] Fax:</b> {fax}   <b>[09] E-mail:</b> {email}", s9))
+    elements.append(rowplain('10', 'Số CMND (trường hợp cá nhân quốc tịch Việt Nam):', clean(fnd(root,'Header','ct10'))))
+    elements.append(rowplain('11', 'Hộ chiếu (trường hợp cá nhân không có quốc tịch Việt Nam):', clean(fnd(root,'Header','ct11'))))
     
-    elements.append(Paragraph(f"<b>[01] Kỳ tính thuế:</b>", s9))
-    elements.append(Table([[Paragraph(f"  [01a] Năm: <b>{ky_nam}</b>", s9), Paragraph(f"  [01b] Kỳ thanh toán: Từ ngày: <b>{kyTuNgay or '...'}</b> Đến ngày: <b>{kyDenNgay or '...'}</b>", s9)]], colWidths=[120, 395]))
-    elements.append(Table([[Paragraph(f"  [01c] Tháng: <b>{ky_thang}</b> năm <b>{ky_nam}</b>", s9), Paragraph(f"  [01d] Quý: ......... năm <b>{ky_nam}</b>", s9)]], colWidths=[200, 315]))
-    elements.append(Table([[Paragraph(f"[02] Lần đầu: [<b>{'X' if loai=='C' else ' '}</b>]", s9), Paragraph(f"[03] Bổ sung lần thứ: [<b>{soLan if soLan and soLan!='0' else ' '}</b>]", s9)]], colWidths=[140, 375]))
-    elements.append(sp(5))
-
-    # NNT Section
-    elements.append(frow('04', 'Tên người nộp thuế:', tenNNT.upper()))
-    elements.append(Table([[Paragraph("[05] Mã số thuế:", s9), draw_mst_boxes(mst, fn)]], colWidths=[145, 370]))
-    elements.append(frow('06', 'Địa chỉ liên hệ:', dchi))
-    elements.append(Table([[Paragraph("[07] Điện thoại:", s9), Paragraph(f"<b>{dthoai}</b>", s9), Paragraph("[08] Fax:", s9), Paragraph(f"<b>{fax}</b>", s9), Paragraph("[09] Email:", s9), Paragraph(f"<b>{email}</b>", s9)]], colWidths=[90, 80, 45, 60, 50, 190]))
-    elements.append(frow('10', 'Số CMND (trường hợp cá nhân quốc tịch Việt Nam):', ct10))
-    elements.append(frow('11', 'Hộ chiếu (trường hợp cá nhân không có quốc tịch Việt Nam):', ct11))
-    elements.append(sp(5))
-
-    # [13-15] Tax Agent
-    elements.append(frow('13', 'Tên đại lý thuế (nếu có):', ''))
-    elements.append(Table([[Paragraph("[14] Mã số thuế:", s9), draw_mst_boxes('', fn)]], colWidths=[145, 370]))
-    elements.append(frow('15', 'Hợp đồng đại lý thuế: số:', ''))
-    elements.append(frow('16', 'Tổ chức khai, nộp thuế thay (nếu có):', tc16))
-    elements.append(Table([[Paragraph("[17] Mã số thuế:", s9), draw_mst_boxes(tc17, fn)]], colWidths=[145, 370]))
-    elements.append(frow('18', 'Địa chỉ:', tc18))
-    elements.append(Table([[Paragraph("[19] Điện thoại:", s9), Paragraph(f"<b>{tc19}</b>", s9), Paragraph("[20] Fax:", s9), Paragraph(f"<b>{tc20}</b>", s9), Paragraph("[21] Email:", s9), Paragraph(f"<b>{tc21}</b>", s9)]], colWidths=[90, 80, 45, 60, 50, 190]))
-    elements.append(frow('22', 'Văn bản ủy quyền (nếu có): số:', maHDong))
-    elements.append(sp(8))
-
-    # Tax Table
-    header = [Paragraph(f"<b>{t}</b>", s8bc) for t in ["STT", "Chỉ tiêu", "Mã chỉ tiêu", "Đơn vị tính", "Số tiền tiền"]]
-    data = [header]
-    body = [
-        ["1", "Tổng doanh thu phát sinh trong kỳ", "[23]", "Đồng", ct23 or "0"],
-        ["2", "Doanh thu tính thuế GTGT", "[24]", "Đồng", ct24 or "0"],
-        ["3", "Doanh thu tính thuế TNCN", "[25]", "Đồng", ct24 or "0"], # Usually same for 01/TTS
-        ["4", "Số thuế GTGT phải nộp", "[26]", "Đồng", ct25 or "0"],
-        ["5", "Số thuế TNCN phải nộp phát sinh trong kỳ", "[27]", "Đồng", ct26 or "0"],
-        ["6", "Tiền phạt, bồi thường (nếu có)", "[28]", "Đồng", ct27 or "0"],
-        ["7", "Tổng số thuế TNCN phải nộp", "[29]", "Đồng", ct29 or "0"],
-    ]
-    for r in body:
-        data.append([Paragraph(r[0], s8c), Paragraph(r[1], s8), Paragraph(r[2], s8c), Paragraph(r[3], s8c), Paragraph(f"<b>{r[4]}</b>", s8r)])
+    elements.append(Paragraph("<b>[12] Trường hợp cá nhân kinh doanh chưa đăng ký thuế thì khai thêm các thông tin sau:</b>", s9))
+    elements.append(Paragraph(f"<b>[12a] Ngày sinh:</b> {fnd_p(root,'CNKDChuaDangKyThue','ct12a_ngaySinh')}   <b>[12b] Quốc tịch:</b> {fnd_p(root,'CNKDChuaDangKyThue','ct12b_tenQuocTich')}", s9))
+    elements.append(Paragraph(f"<b>[12c] Số CMND/CCCD:</b> {fnd_p(root,'CNKDChuaDangKyThue','ct12c_soCMND_CCCD')}  <b>[12c.1] Ngày cấp:</b> {fnd_p(root,'CNKDChuaDangKyThue','ct12c_1_ngayCap')}  <b>[12c.2] Nơi cấp:</b> {fnd_p(root,'CNKDChuaDangKyThue','ct12c_2_noiCap_ten')}", s9))
     
-    table = Table(data, colWidths=[30, 245, 75, 70, 95])
-    table.setStyle(TableStyle([('GRID', (0,0), (-1,-1), 0.5, colors.black), ('BACKGROUND', (0,0), (-1,0), colors.whitesmoke), ('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
+    # 12 sub-fields detail
+    elements.append(Paragraph("Trường hợp cá nhân kinh doanh thuộc đối tượng không có CMND/CCCD tại Việt Nam thì kê khai thông tin tại một trong các thông tin sau:", s8))
+    elements.append(Paragraph(f"<b>[12d] Số hộ chiếu:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12d_soHoChieu')}  <b>[12d.1] Ngày cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12d_1_ngayCap')}  <b>[12d.2] Nơi cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12d_2_noiCap_ten')}", s9))
+    elements.append(rowplain('12đ', 'Số giấy thông hành (đối với thương nhân nước ngoài):', fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12dd_soGiayThongHanh')))
+    elements.append(Paragraph(f"<b>[12đ.1] Ngày cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12dd_1_ngayCap')}  <b>[12đ.2] Nơi cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12dd_2_noiCap_ten')}", s9))
+    elements.append(rowplain('12e', 'Số CMND biên giới (đối với thương nhân nước ngoài):', fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12e_soCMNDBienGioi')))
+    elements.append(Paragraph(f"<b>[12e.1] Ngày cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12e_1_ngayCap')}  <b>[12e.2] Nơi cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12e_2_noiCap_ten')}", s9))
+    elements.append(rowplain('12f', 'Số Giấy tờ chứng thực cá nhân khác:', fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12f_soGiayToKhac')))
+    elements.append(Paragraph(f"<b>[12f.1] Ngày cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12f_1_ngayCap')}  <b>[12f.2] Nơi cấp:</b> {fnd_p(root,'CNKDKhongCoCMND_CCCD','ct12f_2_noiCap_ten')}", s9))
+    
+    elements.append(Paragraph("<b>[12g] Nơi đăng ký thường trú:</b>", s9))
+    elements.append(rowplain('12g.1', 'Số nhà, đường phố/xóm/ấp/thôn:', fnd_p(root,'CT12g','ct12g_soNha')))
+    elements.append(rowplain('12g.2', 'Phường/Xã/Thị trấn:', fnd_p(root,'CT12g','ct12g_tenPhuong')))
+    elements.append(rowplain('12g.3', 'Quận/Huyện/Thị xã/Thành phố thuộc tỉnh:', fnd_p(root,'CT12g','ct12g_tenQuan')))
+    elements.append(rowplain('12g.4', 'Tỉnh/ Thành phố:', fnd_p(root,'CT12g','ct12g_tenTinh')))
+    
+    elements.append(Paragraph("<b>[12h] Chỗ ở hiện tại:</b>", s9))
+    elements.append(rowplain('12h.1', 'Số nhà, đường phố/xóm/ấp/thôn:', fnd_p(root,'CT12h','ct12h_soNha')))
+    elements.append(rowplain('12h.2', 'Phường/Xã/Thị trấn:', fnd_p(root,'CT12h','ct12h_tenPhuong')))
+    elements.append(rowplain('12h.3', 'Quận/Huyện/Thị xã/Thành phố thuộc tỉnh:', fnd_p(root,'CT12h','ct12h_tenQuan')))
+    elements.append(rowplain('12h.4', 'Tỉnh/Thành phố:', fnd_p(root,'CT12h','ct12h_tenTinh')))
+    
+    elements.append(Paragraph(f"<b>[12i] Giấy chứng nhận đăng ký hộ kinh doanh (nếu có): Số:</b> {fnd_p(root,'CT12i','ct12i_soGiayTo')}", s9))
+    elements.append(Paragraph(f"<b>[12i.1] Ngày cấp:</b> {fnd_p(root,'CT12i','ct12i_ngayCap')}  <b>[12i.2] Cơ quan cấp:</b> {fnd_p(root,'CT12i','ct12i_coQuanCap')}", s9))
+    _vun = fmt_num(fnd(root,'Header','ct12k'))
+    elements.append(rowplain('12k', 'Vốn kinh doanh (đồng):', _vun if _vun and _vun!='0' else '0'))
+    
+    elements.append(rowplain('13', 'Tên đại lý thuế (nếu có):', ''))
+    elements.append(rowplain('14', 'Mã số thuế:', ''))
+    elements.append(rowplain('15', 'Hợp đồng đại lý thuế: Số:', ''))
+    elements.append(rowplain('16', 'Tổ chức nộp thuế thay (nếu có):', clean(fnd(root,'ToChucNopThueThay','ct16'))))
+    elements.append(rowplain('17', 'Mã số thuế:', clean(fnd(root,'ToChucNopThueThay','ct17'))))
+    elements.append(rowplain('18', 'Địa chỉ:', clean(fnd(root,'ToChucNopThueThay','ct18'))))
+    elements.append(Paragraph(f"<b>[19] Điện thoại:</b> {fnd(root,'ToChucNopThueThay','ct19')}  <b>[20] Fax:</b> {fnd(root,'ToChucNopThueThay','ct20')}  <b>[21] Email:</b> {fnd(root,'ToChucNopThueThay','ct21')}", s9))
+    elements.append(rowplain('22', 'Văn bản ủy quyền (nếu có): Số: ngày tháng năm', fnd(root,'Header','maHDong')))
+    elements.append(sp(5))
+
+    # TABLE
     elements.append(Paragraph("<b>A. PHẦN CÁ NHÂN KÊ KHAI NGHĨA VỤ THUẾ</b>", s9b))
-    elements.append(sp(3)); elements.append(table); elements.append(sp(10))
-
-    # Signature
-    now = datetime.datetime.now()
-    sig_date = Paragraph(f"<i>........., ngày {now.day:02d} tháng {now.month:02d} năm {now.year}</i>", s8c)
-    sig_label = Paragraph("<b>NGƯỜI NỘP THUẾ hoặc ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ</b>", s9bi)
-    sig_hint = Paragraph("(Ký, ghi rõ họ tên; chức vụ và đóng dấu (nếu có))", s8c)
+    elements.append(Table([[Paragraph("<i>Đơn vị tiền: Đồng Việt Nam</i>", s8r)]], colWidths=[W]))
+    h = [Paragraph(f"<b>{t}</b>", s8bc) for t in ["STT", "Chỉ tiêu", "Mã chỉ tiêu", "Số tiền"]]
+    tdata = [h]
+    body = [("1","Tổng doanh thu phát sinh trong kỳ","[23]",ct23),
+            ("2","Tổng doanh thu tính thuế","[24]",ct24),
+            ("3","Tổng số thuế GTGT phải nộp","[25]",ct25),
+            ("4","Tổng số thuế TNCN phải nộp phát sinh trong kỳ","[26]",ct26),
+            ("5","Tiền phạt, bồi thường mà bên cho thuê nhận được theo thoả thuận tại hợp đồng (nếu có)","[27]",ct27),
+            ("6","Tổng số thuế TNCN phải nộp từ tiền nhận bồi thường, phạt vi phạm hợp đồng (nếu có)","[28]",ct28),
+            ("7","Tổng số thuế TNCN phải nộp [29]=[26]+[28]","[29]",ct29)]
+    for r in body:
+        tdata.append([Paragraph(r[0],s8c), Paragraph(r[1],s8), Paragraph(r[2],s8c), Paragraph(f"<b>{r[3] or '0'}</b>",s8r)])
     
-    sig_table = Table([[Paragraph("", s9), Table([[sig_date], [sig_label], [Spacer(1, 20)], [sig_hint]], colWidths=[250])]], colWidths=[250, 265])
-    elements.append(sig_table)
+    tbl = Table(tdata, colWidths=[30, 290, 80, 115])
+    tbl.setStyle(TableStyle([('GRID',(0,0),(-1,-1),0.5,colors.black),('VALIGN',(0,0),(-1,-1),'MIDDLE'),('BACKGROUND',(0,0),(-1,0),colors.whitesmoke)]))
+    elements.append(tbl); elements.append(sp(2))
+    elements.append(Paragraph("<i>(TNCN: Thu nhập cá nhân; GTGT: Giá trị gia tăng)</i>", s8))
+    elements.append(sp(4))
+    elements.append(Paragraph("Tôi cam đoan số liệu khai trên là đúng và chịu trách nhiệm trước pháp luật về số liệu đã khai./...", s9))
+    
+    # SIGNATURE
+    now = datetime.datetime.now()
+    elements.append(sp(6))
+    elements.append(Table([[Paragraph("", s9), Paragraph(f"<i>Ngày {now.day:02d} tháng {now.month:02d} năm {now.year}</i>", s9bc)]], colWidths=[250, 265], style=[('ALIGN',(1,0),(1,0),'CENTER')]))
+    sig = Table([
+        [Paragraph("<b>NHÂN VIÊN ĐẠI LÝ THUẾ</b>", s9), Paragraph("<b>NGƯỜI NỘP THUẾ hoặc</b>", s9bc)],
+        [Paragraph("Họ và tên:", s9), Paragraph("<b>ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ</b>", s9bc)],
+        [Paragraph("Chứng chỉ hành nghề số:", s9), Paragraph("<i>(Chữ ký, ghi rõ họ tên; chức vụ và đóng dấu (nếu có)/Ký điện tử)</i>", s8c)],
+        [Paragraph("", s9), Paragraph("", s9)],
+        [Paragraph("---", s9), Paragraph("", s9)],
+    ], colWidths=[240, 275])
+    elements.append(sig)
 
 def extract_tax_metadata(xml_content):
     try:
-        clean_xml = pre_process_xml(xml_content)
-        root = ET.fromstring(clean_xml)
-        mst, ten_tk, period = "Unknown", "TỜ KHAI THUẾ", "Unknown"
-        for elem in root.iter():
-            t = strip_ns(elem.tag)
-            if t == 'mst': mst = elem.text or ""
-            if t == 'tenTKhai': ten_tk = elem.text or ""
-            if t == 'kyKKhaiTuNgay': period = elem.text or ""
-        return {"name": ten_tk, "mst": mst, "period": period}
-    except:
-        return {"name": "HỒ SƠ THUẾ", "mst": "", "period": ""}
+        root = ET.fromstring(pre_process_xml(xml_content))
+        return {"name": fnd(root,'TKhaiThue','tenTKhai'), "mst": fnd(root,'NNT','mst'), "period": fnd(root,'TKhaiThue','KyKKhaiThue','kyKKhaiTuNgay')}
+    except: return {"name":"TỜ KHAI","mst":"","period":""}
 
 def generate_tax_pdf(xml_content, title="BÁO CÁO THUẾ"):
-    register_fonts()
-    fn, fb, fi = 'VN', 'VNB', 'VNI'
-    def N(name, **kw): return ParagraphStyle(name, fontName=fn, **kw)
-    def B(name, **kw): return ParagraphStyle(name, fontName=fb, **kw)
-    
-    clean_xml = pre_process_xml(xml_content)
-    root = ET.fromstring(clean_xml)
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    register_fonts(); fn, fb, fi = 'T', 'TB', 'TI'
+    root = ET.fromstring(pre_process_xml(xml_content))
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
     elements = []
-    
-    maTKhai = ""
-    for elem in root.iter():
-        if strip_ns(elem.tag) == 'maTKhai':
-            maTKhai = elem.text; break
-    
-    if maTKhai in ('470', '131'):
-        render_01TTS(root, elements, fn, fb, fi)
-    else:
-        elements.append(Paragraph(f"<b>{title}</b>", B('t', fontSize=14, alignment=1)))
-        elements.append(Spacer(1, 15))
-        for child in root.iter():
-            if child.text and child.text.strip():
-                tag = strip_ns(child.tag)
-                if len(child.text.strip()) > 1:
-                    elements.append(Paragraph(f"<b>[{tag}]</b>: {child.text.strip()}", N('n', fontSize=9)))
-    
+    render_01TTS(root, elements, fn, fb, fi)
     doc.build(elements, canvasmaker=NumberedCanvas)
-    buffer.seek(0)
-    return buffer
+    buf.seek(0); return buf

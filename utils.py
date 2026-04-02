@@ -275,15 +275,48 @@ def render_01TTS(root, elements, fn, fb, fi):
     sig_table = Table([[Paragraph("", s9), Table([[sig_date], [sig_label], [Spacer(1, 20)], [sig_hint]], colWidths=[250])]], colWidths=[250, 265])
     elements.append(sig_table)
 
-def generate_tax_pdf(xml_content):
+def extract_tax_metadata(xml_content):
+    try:
+        clean_xml = pre_process_xml(xml_content)
+        root = ET.fromstring(clean_xml)
+        mst, ten_tk, period = "Unknown", "TỜ KHAI THUẾ", "Unknown"
+        for elem in root.iter():
+            t = strip_ns(elem.tag)
+            if t == 'mst': mst = elem.text or ""
+            if t == 'tenTKhai': ten_tk = elem.text or ""
+            if t == 'kyKKhaiTuNgay': period = elem.text or ""
+        return {"name": ten_tk, "mst": mst, "period": period}
+    except:
+        return {"name": "HỒ SƠ THUẾ", "mst": "", "period": ""}
+
+def generate_tax_pdf(xml_content, title="BÁO CÁO THUẾ"):
     register_fonts()
     fn, fb, fi = 'VN', 'VNB', 'VNI'
+    def N(name, **kw): return ParagraphStyle(name, fontName=fn, **kw)
+    def B(name, **kw): return ParagraphStyle(name, fontName=fb, **kw)
+    
     clean_xml = pre_process_xml(xml_content)
     root = ET.fromstring(clean_xml)
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
     elements = []
-    render_01TTS(root, elements, fn, fb, fi)
+    
+    maTKhai = ""
+    for elem in root.iter():
+        if strip_ns(elem.tag) == 'maTKhai':
+            maTKhai = elem.text; break
+    
+    if maTKhai in ('470', '131'):
+        render_01TTS(root, elements, fn, fb, fi)
+    else:
+        elements.append(Paragraph(f"<b>{title}</b>", B('t', fontSize=14, alignment=1)))
+        elements.append(Spacer(1, 15))
+        for child in root.iter():
+            if child.text and child.text.strip():
+                tag = strip_ns(child.tag)
+                if len(child.text.strip()) > 1:
+                    elements.append(Paragraph(f"<b>[{tag}]</b>: {child.text.strip()}", N('n', fontSize=9)))
+    
     doc.build(elements, canvasmaker=NumberedCanvas)
     buffer.seek(0)
     return buffer

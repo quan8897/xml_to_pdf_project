@@ -195,8 +195,9 @@ def render_01TTS(root, elements, fn, fb):
     elements.append(t_info)
     elements.append(Spacer(1, 6))
 
-    # ── 4. THÔNG TIN MỞ RỘNG [10]→[12k] ──────────────────────────
-    def get_sub(tag_parent, tag_child):
+    # ── 4. CÁC TRƯỜNG [10] → [22] — LUÔN VẼ, có dữ liệu thì điền ──
+    def gs(tag_parent, tag_child):
+        """Lấy text từ thẻ con, trả về '' nếu không có."""
         for p in root.iter():
             if strip_ns(p.tag) == tag_parent:
                 for c in p:
@@ -204,72 +205,120 @@ def render_01TTS(root, elements, fn, fb):
                         return (c.text or "").strip()
         return ""
 
+    # Đọc tất cả giá trị (rỗng cũng giữ lại)
+    ct10 = get(root, 'ct10')
+    ct11 = get(root, 'ct11')
+
+    ct12a_ngaySinh  = gs('CNKDChuaDangKyThue', 'ct12a_ngaySinh')
+    ct12b_tenQuocTich= gs('CNKDChuaDangKyThue','ct12b_tenQuocTich')
+    ct12c_so        = gs('CNKDChuaDangKyThue', 'ct12c_soCMND_CCCD')
+    ct12c_ten       = gs('CNKDChuaDangKyThue', 'ct12c_ten')
+    ct12c_ma        = gs('CNKDChuaDangKyThue', 'ct12c_ma')
+    ct12c_ngayCap   = gs('CNKDChuaDangKyThue', 'ct12c_1_ngayCap')
+    ct12c_noiCap    = gs('CNKDChuaDangKyThue', 'ct12c_2_noiCap_ten')
+
+    ct12d_so        = gs('CNKDKhongCoCMND_CCCD','ct12d_soHoChieu')
+    ct12d_ten       = gs('CNKDKhongCoCMND_CCCD','ct12d_ten')
+    ct12d_ngayCap   = gs('CNKDKhongCoCMND_CCCD','ct12d_1_ngayCap')
+    ct12d_noiCap    = gs('CNKDKhongCoCMND_CCCD','ct12d_2_noiCap_ten')
+
+    ct12dd_so       = gs('CNKDKhongCoCMND_CCCD','ct12dd_soGiayThongHanh')
+    ct12dd_ten      = gs('CNKDKhongCoCMND_CCCD','ct12dd_ten')
+
+    ct12e_so        = gs('CNKDKhongCoCMND_CCCD','ct12e_soCMNDBienGioi')
+    ct12e_ten       = gs('CNKDKhongCoCMND_CCCD','ct12e_ten')
+
+    ct12f_so        = gs('CNKDKhongCoCMND_CCCD','ct12f_soGiayToKhac')
+    ct12f_ten       = gs('CNKDKhongCoCMND_CCCD','ct12f_ten')
+
+    ct12g_soNha     = gs('CT12g','ct12g_soNha')
+    ct12g_phuong    = gs('CT12g','ct12g_tenPhuong')
+    ct12g_quan      = gs('CT12g','ct12g_tenQuan')
+    ct12g_tinh      = gs('CT12g','ct12g_tenTinh')
+
+    ct12h_soNha     = gs('CT12h','ct12h_soNha')
+    ct12h_phuong    = gs('CT12h','ct12h_tenPhuong')
+    ct12h_quan      = gs('CT12h','ct12h_tenQuan')
+    ct12h_tinh      = gs('CT12h','ct12h_tenTinh')
+
+    ct12i_so        = gs('CT12i','ct12i_soGiayTo')
+    ct12i_ngayCap   = gs('CT12i','ct12i_ngayCap')
+    ct12i_coQuanCap = gs('CT12i','ct12i_coQuanCap')
+
+    ct12k           = get(root, 'ct12k')
+    maHDong         = get(root, 'maHDong')
+
+    # Tổ chức nộp thuế thay [16-21]
+    ct16 = get(root, 'ct16'); ct17 = get(root, 'ct17')
+    ct18 = get(root, 'ct18'); ct19 = get(root, 'ct19')
+    ct20 = get(root, 'ct20'); ct21 = get(root, 'ct21')
+
+    dia_chi_g = ", ".join(filter(None, [ct12g_soNha, ct12g_phuong, ct12g_quan, ct12g_tinh]))
+    dia_chi_h = ", ".join(filter(None, [ct12h_soNha, ct12h_phuong, ct12h_quan, ct12h_tinh]))
+
+    # LUÔN VẼ TẤT CẢ — không dùng if kiểm tra dữ liệu
     ext_rows = [
-        [Paragraph("[10] Số CMND (trường hợp cá nhân khai thuế tự đăng ký):", sN),
+        [Paragraph("[10] Số CMND (trường hợp hợp cá nhân khai thuế):", sN),
          Paragraph(f"<b>{ct10}</b>", sN)],
-        [Paragraph("[11] Số CMND (trường hợp cá nhân chưa đăng ký theo kỳ trước):", sN),
+
+        [Paragraph("[11] Số CMND (kỳ khai trước không có CMND):", sN),
          Paragraph(f"<b>{ct11}</b>", sN)],
+
+        [Paragraph("[12a] Ngày sinh:", sN),
+         Paragraph(f"<b>{ct12a_ngaySinh}</b>    [12b] Quốc tịch: <b>{ct12b_tenQuocTich}</b>", sN)],
+
+        [Paragraph("[12c] Số CMND/CCCD:", sN),
+         Paragraph(f"<b>{ct12c_so}</b>    Tên: <b>{ct12c_ten}</b>    Mã: <b>{ct12c_ma}</b>", sN)],
+
+        [Paragraph("[12c.1] Ngày cấp:", sN),
+         Paragraph(f"<b>{ct12c_ngayCap}</b>    [12c.2] Nơi cấp: <b>{ct12c_noiCap}</b>", sN)],
+
+        [Paragraph("[12d] Số hộ chiếu:", sN),
+         Paragraph(f"<b>{ct12d_so}</b>    Tên: <b>{ct12d_ten}</b>", sN)],
+
+        [Paragraph("[12d.1] Ngày cấp:", sN),
+         Paragraph(f"<b>{ct12d_ngayCap}</b>    [12d.2] Nơi cấp: <b>{ct12d_noiCap}</b>", sN)],
+
+        [Paragraph("[12dd] Số giấy thông hành:", sN),
+         Paragraph(f"<b>{ct12dd_so}</b>    Tên: <b>{ct12dd_ten}</b>", sN)],
+
+        [Paragraph("[12e] Số CMND biên giới:", sN),
+         Paragraph(f"<b>{ct12e_so}</b>    Tên: <b>{ct12e_ten}</b>", sN)],
+
+        [Paragraph("[12f] Số giấy tờ khác:", sN),
+         Paragraph(f"<b>{ct12f_so}</b>    Tên: <b>{ct12f_ten}</b>", sN)],
+
+        [Paragraph("[12g] Địa chỉ nơi cho thuê (số nhà/đường phố/phường-xã/quận-huyện/tỉnh-tp):", sN),
+         Paragraph(f"<b>{dia_chi_g}</b>", sN)],
+
+        [Paragraph("[12h] Địa chỉ đăng ký kinh doanh:", sN),
+         Paragraph(f"<b>{dia_chi_h}</b>", sN)],
+
+        [Paragraph("[12i] Số giấy tờ:", sN),
+         Paragraph(f"<b>{ct12i_so}</b>    Ngày cấp: <b>{ct12i_ngayCap}</b>    Cơ quan: <b>{ct12i_coQuanCap}</b>", sN)],
+
+        [Paragraph("[12k] Vốn kinh doanh (đồng):", sN),
+         Paragraph(f"<b>{ct12k}</b>", sN)],
+
+        [Paragraph("[16] Tổ chức nộp thuế:", sN),
+         Paragraph(f"<b>{ct16}</b>    [17] Mã số: <b>{ct17}</b>", sN)],
+
+        [Paragraph("[18] Địa chỉ:", sN),
+         Paragraph(f"<b>{ct18}</b>", sN)],
+
+        [Paragraph("[19] Mã số thuế:", sN),
+         Paragraph(f"<b>{ct19}</b>    [20] Fax: <b>{ct20}</b>    [21] Email: <b>{ct21}</b>", sN)],
+
+        [Paragraph("[22] Mã hợp đồng:", sN),
+         Paragraph(f"<b>{maHDong}</b>", sN)],
     ]
 
-    # CNKDChuaDangKyThue [12a - 12c]
-    ct12c_so = get_sub('CNKDChuaDangKyThue', 'ct12c_soCMND_CCCD')
-    ct12c_ten= get_sub('CNKDChuaDangKyThue', 'ct12c_ten')
-    if ct12c_so or ct12c_ten:
-        ext_rows.append([
-            Paragraph("[12c] Số CMND/CCCD (cá nhân KD chưa đăng ký thuế):", sN),
-            Paragraph(f"<b>{ct12c_so}</b>   Tên: <b>{ct12c_ten}</b>", sN)])
-
-    # CNKDKhongCoCMND_CCCD [12d - 12f]
-    ct12d_so = get_sub('CNKDKhongCoCMND_CCCD', 'ct12d_soHoChieu')
-    ct12d_ten= get_sub('CNKDKhongCoCMND_CCCD', 'ct12d_ten')
-    if ct12d_so or ct12d_ten:
-        ext_rows.append([
-            Paragraph("[12d] Số hộ chiếu (CNKD không có CMND/CCCD):", sN),
-            Paragraph(f"<b>{ct12d_so}</b>   Tên: <b>{ct12d_ten}</b>", sN)])
-
-    # CT12g - địa chỉ bất động sản
-    ct12g_soNha  = get_sub('CT12g', 'ct12g_soNha')
-    ct12g_phuong = get_sub('CT12g', 'ct12g_tenPhuong')
-    ct12g_quan   = get_sub('CT12g', 'ct12g_tenQuan')
-    ct12g_tinh   = get_sub('CT12g', 'ct12g_tenTinh')
-    if any([ct12g_soNha, ct12g_phuong, ct12g_quan, ct12g_tinh]):
-        dia_chi_g = ", ".join(filter(None, [ct12g_soNha, ct12g_phuong, ct12g_quan, ct12g_tinh]))
-        ext_rows.append([
-            Paragraph("[12g] Địa chỉ bất động sản (nơi cho thuê):", sN),
-            Paragraph(f"<b>{dia_chi_g}</b>", sN)])
-
-    # CT12h - địa chỉ đăng ký kinh doanh
-    ct12h_soNha  = get_sub('CT12h', 'ct12h_soNha')
-    ct12h_phuong = get_sub('CT12h', 'ct12h_tenPhuong')
-    ct12h_quan   = get_sub('CT12h', 'ct12h_tenQuan')
-    ct12h_tinh   = get_sub('CT12h', 'ct12h_tenTinh')
-    if any([ct12h_soNha, ct12h_phuong, ct12h_quan, ct12h_tinh]):
-        dia_chi_h = ", ".join(filter(None, [ct12h_soNha, ct12h_phuong, ct12h_quan, ct12h_tinh]))
-        ext_rows.append([
-            Paragraph("[12h] Địa chỉ đăng ký kinh doanh:", sN),
-            Paragraph(f"<b>{dia_chi_h}</b>", sN)])
-
-    # CT12i - giấy tờ khác
-    ct12i_so  = get_sub('CT12i', 'ct12i_soGiayTo')
-    ct12i_cqc = get_sub('CT12i', 'ct12i_coQuanCap')
-    if ct12i_so:
-        ext_rows.append([
-            Paragraph("[12i] Số giấy tờ khác:", sN),
-            Paragraph(f"<b>{ct12i_so}</b>   Cơ quan cấp: <b>{ct12i_cqc}</b>", sN)])
-
-    ext_rows.append([
-        Paragraph("[12k] Số hợp đồng thuê:", sN),
-        Paragraph(f"<b>{ct12k}</b>", sN)])
-
-    ext_rows.append([
-        Paragraph("[22] Mã hợp đồng:", sN),
-        Paragraph(f"<b>{maHDong}</b>", sN)])
-
-    t_ext = Table(ext_rows, colWidths=[220, 295])
+    t_ext = Table(ext_rows, colWidths=[230, 285])
     t_ext.setStyle(TableStyle([
-        ('VALIGN',(0,0),(-1,-1),'TOP'),
-        ('TOPPADDING',(0,0),(-1,-1),2),
-        ('BOTTOMPADDING',(0,0),(-1,-1),2),
+        ('VALIGN',         (0,0),(-1,-1),'TOP'),
+        ('TOPPADDING',     (0,0),(-1,-1), 2),
+        ('BOTTOMPADDING',  (0,0),(-1,-1), 2),
+        ('LINEBELOW',      (0,-1),(-1,-1), 0.3, colors.lightgrey),
     ]))
     elements.append(t_ext)
     elements.append(Spacer(1, 8))

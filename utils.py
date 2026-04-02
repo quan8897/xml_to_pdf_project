@@ -14,12 +14,14 @@ def register_fonts():
         "Roboto-Regular.ttf", # Ưu tiên font trong project
         "arial.ttf",
         r"C:\Windows\Fonts\arial.ttf", # Windows fallback
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", # Debian/Ubuntu fallback
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", # Linux fallback
     ]
     font_bold_paths = [
         "Roboto-Bold.ttf",
         "arialbd.ttf",
         r"C:\Windows\Fonts\arialbd.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     ]
     

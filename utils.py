@@ -61,14 +61,40 @@ def format_value(value):
     return val_str.replace('\n', '<br/>')
 
 def register_fonts():
-    font_paths = ["Roboto-Regular.ttf", "arial.ttf", r"C:\Windows\Fonts\arial.ttf"]
-    for f in font_paths:
-        if os.path.exists(f):
-            try:
+    font_paths = [
+        "Roboto-Regular.ttf",
+        "arial.ttf",
+        r"C:\Windows\Fonts\arial.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    ]
+    font_bold_paths = [
+        "Roboto-Bold.ttf",
+        "arialbd.ttf",
+        r"C:\Windows\Fonts\arialbd.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    ]
+    try:
+        reg = None
+        for f in font_paths:
+            if os.path.exists(f):
                 pdfmetrics.registerFont(TTFont('VN-Font', f))
-                pdfmetrics.registerFont(TTFont('VN-Font-Bold', f))
-                return True
-            except: continue
+                reg = f
+                break
+        bold = None
+        for fb in font_bold_paths:
+            if os.path.exists(fb):
+                pdfmetrics.registerFont(TTFont('VN-Font-Bold', fb))
+                bold = fb
+                break
+        if reg and not bold:
+            pdfmetrics.registerFont(TTFont('VN-Font-Bold', reg))
+        if reg:
+            return True
+    except: pass
+    # Fallback: map về Helvetica có sẵn trong ReportLab
+    from reportlab.pdfbase.pdfmetrics import registerFontFamily
     return False
 
 def xml_to_dict(element):
@@ -93,7 +119,12 @@ def generate_tax_pdf(xml_content, title="BÁO CÁO THUẾ"):
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=30, bottomMargin=30)
     
     register_fonts()
-    f_name, f_bold = 'VN-Font', 'VN-Font-Bold'
+    font_ready = os.path.exists("Roboto-Regular.ttf") or \
+                 os.path.exists(r"C:\Windows\Fonts\arial.ttf") or \
+                 os.path.exists("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf") or \
+                 os.path.exists("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+    f_name = 'VN-Font' if font_ready else 'Helvetica'
+    f_bold = 'VN-Font-Bold' if font_ready else 'Helvetica-Bold'
     
     # Styles
     s_normal = ParagraphStyle(name='Normal', fontName=f_name, fontSize=9, leading=12)
